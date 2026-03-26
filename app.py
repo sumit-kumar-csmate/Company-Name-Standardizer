@@ -87,7 +87,19 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
     ai_status: str = "Skipped (AI Disabled)"
     if api_key and ai_candidates:
         with st.spinner(f"🤖 AI verifying {len(ai_candidates)} flagged names …"):
-            ai_map, ai_status = refine_company_names(list(ai_candidates), api_key)
+            raw_ai_map, ai_status = refine_company_names(list(ai_candidates), api_key)
+            
+            # Re-normalise AI outputs to strictly ensure Plural/Suffix rule compliance
+            for raw_canon, ai_refined in raw_ai_map.items():
+                if ai_refined and ai_refined != raw_canon:
+                    try:
+                        nd = process_single_name(ai_refined)
+                        ai_map[raw_canon] = format_canonical_name(generate_canonical(nd))
+                    except Exception:
+                        ai_map[raw_canon] = ai_refined
+                else:
+                    ai_map[raw_canon] = ai_refined
+                    
     elif api_key and not ai_candidates:
         ai_status = "Skipped (No flags found)"
         st.info("ℹ️ AI enabled, but no Medium/Low confidence names found.")

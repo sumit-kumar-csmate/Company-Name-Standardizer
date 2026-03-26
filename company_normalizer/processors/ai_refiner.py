@@ -8,15 +8,16 @@ import time
 from openai import OpenAI
 
 _PROMPT = """You are a data-cleaning expert for international trade data.
-Fix obvious spelling errors and remove stray artefact characters from company names.
+Fix spelling errors, remove stray artefacts, and expand abbreviation initials from company names.
 
 Rules:
 1. Fix spelling errors (e.g. "Limted" → "Limited", "Indsutries" → "Industries").
-2. Remove trailing random chars/digits that look like data artefacts.
-3. Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, …).
-4. Do NOT add or invent words not present in the original.
-5. If the name is already correct, return it unchanged.
-6. Output ONLY lines in the format:  Original|Refined   (one per input, nothing else).
+2. Remove trailing random chars/digits that are data artefacts.
+3. INITIALLY EXPAND: If you see a solitary letter that obviously stands for a country or region (e.g. "I" standing for "India", "Intl" for "International"), expand it appropriately based on context. 
+4. Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, …).
+5. Do NOT invent words not conceptually present in the original abbreviations.
+6. If the name is already perfect, return it unchanged.
+7. Output ONLY lines in the format:  Original|Refined   (one per input, no extra text).
 """
 
 def refine_company_names(names: list, api_key: str,

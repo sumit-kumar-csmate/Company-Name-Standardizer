@@ -25,6 +25,9 @@ ABBREVIATION_MAP = [
     # " pte" with leading space → " Private"  (space-sensitive per spec)
     (r'(?<= )Pte\.?\b',        'Private'),
     (r'(?<= )PTE\.?\b',        'Private'),
+    # P LTD / P. LTD / P.LTD → Private Limited
+    (r'\bP(?:\.\s*|\s+)(?:Ltd|Limited)\.?\b', 'Private Limited'),
+    (r'\bP(?:\.\s*|\s+)(?:LTD|LIMITED)\.?\b', 'Private Limited'),
     # Ltd / Ltda / Limite / Limi / Lim (end only) → Limited
     (r'\bLtda?\b\.?',          'Limited'),
     (r'\bLTDA?\b\.?',          'Limited'),

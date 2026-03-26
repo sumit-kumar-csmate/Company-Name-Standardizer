@@ -20,7 +20,7 @@ Space-only rule (High confidence):
 from ..processors.legal_suffix_normalizer  import suffixes_can_merge
 from ..processors.descriptor_checker       import descriptors_allow_merge
 from ..processors.geographic_matcher       import geography_allows_merge
-from ..processors.singular_plural_handler  import names_differ_only_by_approved_pairs
+from ..processors.singular_plural_handler  import names_differ_only_by_approved_pairs, normalize_words_in_name
 from ..processors.word_order_normalizer    import names_are_word_order_variants
 
 # Words removed as substrings when computing the "core key" for matching
@@ -30,12 +30,13 @@ _REMOVABLE_SUBSTRINGS = ['PRIVATE', 'LIMITED', 'AND']
 def _core_key(name: str) -> str:
     """
     Core comparison key:
-      1. Uppercase
-      2. Remove all spaces
-      3. Strip PRIVATE / LIMITED / AND as substrings (handles both whole-word
+      1. Normalize singular/plural words
+      2. Uppercase
+      3. Remove all spaces
+      4. Strip PRIVATE / LIMITED / AND as substrings (handles both whole-word
          and embedded cases, e.g. 'Salesprivate' → core same as 'Sales Private')
     """
-    s = name.upper().replace(' ', '')
+    s = normalize_words_in_name(name).upper().replace(' ', '')
     for w in _REMOVABLE_SUBSTRINGS:
         s = s.replace(w, '')
     return s

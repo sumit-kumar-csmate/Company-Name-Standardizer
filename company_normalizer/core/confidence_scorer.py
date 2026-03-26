@@ -23,6 +23,11 @@ def calculate_confidence(name_data: dict, merge_reason: str = "All rules align")
     if len(name_data.get('removed_prefixes', [])) > 2:
         score += 1          # many prefixes = unusual structure
 
+    # Flag single-character words (like "I", "S") to aggressively trigger AI verification
+    clean_words = name_data.get('cleaned_upper', '').split()
+    if any(len(w) == 1 and w not in ["A", "&", "O"] for w in clean_words):
+        score += 1
+
     if score == 0:
         return "High", "NO"
     elif score <= 2:
