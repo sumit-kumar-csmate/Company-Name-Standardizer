@@ -1,6 +1,6 @@
 """Functional descriptor extraction and conflict checking."""
 
-from ..config.functional_descriptors import get_functional_descriptors
+from company_normalizer.config.functional_descriptors import get_functional_descriptors
 
 
 def extract_descriptors(name: str) -> set:

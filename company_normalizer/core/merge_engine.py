@@ -17,11 +17,11 @@ Space-only rule (High confidence):
   (one has extra spaces between characters).
 """
 
-from ..processors.legal_suffix_normalizer  import suffixes_can_merge
-from ..processors.descriptor_checker       import descriptors_allow_merge
-from ..processors.geographic_matcher       import geography_allows_merge
-from ..processors.singular_plural_handler  import names_differ_only_by_approved_pairs, normalize_words_in_name
-from ..processors.word_order_normalizer    import names_are_word_order_variants
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.legal_suffix_normalizer  import suffixes_can_merge
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.descriptor_checker       import descriptors_allow_merge
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.geographic_matcher       import geography_allows_merge
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.singular_plural_handler  import names_differ_only_by_approved_pairs, normalize_words_in_name
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.word_order_normalizer    import names_are_word_order_variants
 
 # Words removed as substrings when computing the "core key" for matching
 _REMOVABLE_SUBSTRINGS = ['PRIVATE', 'LIMITED', 'AND']

@@ -1,6 +1,6 @@
 """Prefix removal — strips trade/business/legal prefixes from the START of a name."""
 
-from ..config.prefixes import get_all_prefixes
+from company_normalizer.config.prefixes import get_all_prefixes
 
 
 def remove_prefixes(name: str):

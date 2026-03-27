@@ -4,7 +4,7 @@ Applied BEFORE prefix removal.  Does NOT remove geographic country terms.
 """
 
 import re
-from ..config.geography import is_geographic_term
+from company_normalizer.config.geography import is_geographic_term
 
 ADDRESS_KEYWORDS = {
     "BUILDING", "BLDG", "BLD", "FLOOR", "FLR",

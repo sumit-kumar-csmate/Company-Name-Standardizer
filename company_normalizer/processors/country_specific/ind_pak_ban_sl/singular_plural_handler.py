@@ -1,6 +1,6 @@
 """Singular/plural normalisation for approved word pairs."""
 
-from ..config.singular_plural import normalize_word, is_approved_pair
+from company_normalizer.config.singular_plural import normalize_word, is_approved_pair
 
 
 def normalize_words_in_name(name: str) -> str:

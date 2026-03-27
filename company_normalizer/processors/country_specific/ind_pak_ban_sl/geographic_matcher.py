@@ -1,6 +1,6 @@
 """Geographic term extraction and merge-rule evaluation."""
 
-from ..config.geography import get_geographic_terms
+from company_normalizer.config.geography import get_geographic_terms
 
 
 def extract_geography(name: str) -> set:

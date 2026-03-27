@@ -1,6 +1,6 @@
 """Legal suffix extraction and normalisation."""
 
-from ..config.legal_suffixes import normalize_suffix as _cfg_normalize, get_all_suffixes
+from company_normalizer.config.legal_suffixes import normalize_suffix as _cfg_normalize, get_all_suffixes
 
 
 def extract_and_normalize_suffix(name: str):

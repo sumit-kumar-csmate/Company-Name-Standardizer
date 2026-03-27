@@ -20,12 +20,12 @@ load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from company_normalizer.processors.text_cleaner           import clean_text
-from company_normalizer.processors.address_remover         import remove_address_details
-from company_normalizer.processors.prefix_remover          import remove_prefixes
-from company_normalizer.processors.legal_suffix_normalizer import extract_and_normalize_suffix
-from company_normalizer.processors.descriptor_checker      import extract_descriptors
-from company_normalizer.processors.geographic_matcher      import extract_geography
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.text_cleaner           import clean_text
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.address_remover         import remove_address_details
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.prefix_remover          import remove_prefixes
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.legal_suffix_normalizer import extract_and_normalize_suffix
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.descriptor_checker      import extract_descriptors
+from company_normalizer.processors.country_specific.ind_pak_ban_sl.geographic_matcher      import extract_geography
 from company_normalizer.core.merge_engine                  import build_merge_groups
 from company_normalizer.core.canonical_generator           import (
     generate_canonical, generate_canonical_for_group, format_canonical_name,
@@ -57,7 +57,7 @@ def process_single_name(raw_name: str) -> dict:
     }
 
 
-def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
+def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, region: str = "Ind/Pak/Ban/SL"):
     # Stage 1 — per-name processing
     name_data = [process_single_name(str(row[company_col])) for _, row in df.iterrows()]
 
@@ -268,6 +268,39 @@ def main():
         ]}), use_container_width=True)
         return
 
+    # ── Region Selection ──────────────────────────────────────────────────────
+    st.markdown("## 🌍 Select Cleaning Mode")
+    
+    clean_mode = st.radio(
+        "Mode:",
+        ("Country Specific", "Global Partners"),
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+
+    selected_country = None
+    if clean_mode == "Country Specific":
+        countries = [
+            "Argentina",
+            "Brazil",
+            "Chile",
+            "Ind/Pak/Ban/SL",
+            "Indonesia",
+            "Malaysia",
+            "Mexico",
+            "Philippines",
+            "Turkey",
+            "Vietnam"
+        ]
+        selected_country = st.selectbox("Select Country/Region", countries)
+        
+        # Determine strict region mapping
+        active_region = "Ind/Pak/Ban/SL" if selected_country == "Ind/Pak/Ban/SL" else selected_country
+    else:
+        active_region = "Global Partners"
+
+    st.markdown("---")
+
     # ── Read ──────────────────────────────────────────────────────────────────
     ext = os.path.splitext(uploaded.name)[1].lower()
     try:
@@ -275,25 +308,22 @@ def main():
     except Exception as e:
         st.error(f"Could not read file: {e}"); return
 
-    # ── Column selector ───────────────────────────────────────────────────────
-    st.markdown("## 🗂️ Select Company Name Column")
-    default = next(
-        (c for c in df.columns if any(k in c.lower() for k in ["company", "name", "party", "consignee", "shipper"])),
-        df.columns[0],
-    )
-    company_col = st.selectbox("Column", df.columns.tolist(),
-                               index=df.columns.tolist().index(default))
-
+    # ── Data Preview ──────────────────────────────────────────────────────────
+    company_col = df.columns[0]
     st.markdown("#### Preview (first 10 rows)")
     st.dataframe(df.head(10), use_container_width=True)
-    st.caption(f"Total rows: **{len(df):,}**   ·   Selected column: **{company_col}**")
+    st.caption(f"Total rows: **{len(df):,}**   ·   Column processed: **{company_col}**")
 
     # ── Process ───────────────────────────────────────────────────────────────
     if st.button("🚀 Standardise Names", use_container_width=True):
+        if active_region != "Ind/Pak/Ban/SL":
+            st.warning(f"⚠️ Rules not defined yet for **{active_region}**. Processing bypassed.")
+            return
+
         key_to_use = api_key if (enable_ai and api_key) else None
         with st.spinner("Processing …"):
             try:
-                result_df, total, n_groups, ai_status = process_dataframe(df, company_col, api_key=key_to_use)
+                result_df, total, n_groups, ai_status = process_dataframe(df, company_col, api_key=key_to_use, region=active_region)
             except Exception as e:
                 st.error(f"Processing error: {e}"); st.exception(e); return
 
