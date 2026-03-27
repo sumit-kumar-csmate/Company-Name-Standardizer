@@ -86,19 +86,32 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, r
     ai_map: dict = {}
     ai_status: str = "Skipped (AI Disabled)"
     if api_key and ai_candidates:
-        with st.spinner(f"🤖 AI verifying {len(ai_candidates)} flagged names …"):
-            raw_ai_map, ai_status = refine_company_names(list(ai_candidates), api_key)
+        total_flags = len(ai_candidates)
+        progress_bar = st.progress(0, text=f"🤖 Init AI for {total_flags} names...")
+        
+        def progress_callback(current, total, eta_seconds):
+            pct = int((current / total) * 100) if total > 0 else 0
+            eta_str = f"{int(eta_seconds)}s" if eta_seconds > 0 else "Calc..."
+            text = f"🤖 AI verifying {current} of {total} flagged names ({pct}%) | ETA: {eta_str}"
+            progress_bar.progress(current / total if total > 0 else 0, text=text)
+
+        raw_ai_map, ai_status = refine_company_names(
+            list(ai_candidates), 
+            api_key, 
+            progress_callback=progress_callback
+        )
+        progress_bar.empty()
             
-            # Re-normalise AI outputs to strictly ensure Plural/Suffix rule compliance
-            for raw_canon, ai_refined in raw_ai_map.items():
-                if ai_refined and ai_refined != raw_canon:
-                    try:
-                        nd = process_single_name(ai_refined)
-                        ai_map[raw_canon] = format_canonical_name(generate_canonical(nd))
-                    except Exception:
-                        ai_map[raw_canon] = ai_refined
-                else:
+        # Re-normalise AI outputs to strictly ensure Plural/Suffix rule compliance
+        for raw_canon, ai_refined in raw_ai_map.items():
+            if ai_refined and ai_refined != raw_canon:
+                try:
+                    nd = process_single_name(ai_refined)
+                    ai_map[raw_canon] = format_canonical_name(generate_canonical(nd))
+                except Exception:
                     ai_map[raw_canon] = ai_refined
+            else:
+                ai_map[raw_canon] = ai_refined
                     
     elif api_key and not ai_candidates:
         ai_status = "Skipped (No flags found)"

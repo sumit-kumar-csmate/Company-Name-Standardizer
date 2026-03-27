@@ -22,7 +22,8 @@ Rules:
 """
 
 def refine_company_names(names: list, api_key: str,
-                         model_name: str = "gemini-2.5-flash") -> tuple[dict, str]:
+                         model_name: str = "gemini-2.5-flash",
+                         progress_callback=None) -> tuple[dict, str]:
     """
     Refine *names* via OpenAI custom proxy. Returns ({original: refined}, status_msg).
     On any error, every name maps to itself (safe no-op fallback).
@@ -41,11 +42,22 @@ def refine_company_names(names: list, api_key: str,
         return {n: n for n in names}, err
 
     unique    = list(dict.fromkeys(names))
+    total_uni = len(unique)
     result    = {}
     BATCH     = 50  # safer batch size for OpenAI chat endpoint
     status    = "OK"
 
-    for start in range(0, len(unique), BATCH):
+    start_time = time.time()
+    for start in range(0, total_uni, BATCH):
+        if progress_callback:
+            elapsed = time.time() - start_time
+            if start > 0:
+                time_per_item = elapsed / start
+                eta_seconds = (total_uni - start) * time_per_item
+            else:
+                eta_seconds = 0.0
+            progress_callback(start, total_uni, eta_seconds)
+            
         batch  = unique[start: start + BATCH]
         prompt = _PROMPT + "\n\nInput List:\n" + "\n".join(batch)
         
@@ -68,6 +80,9 @@ def refine_company_names(names: list, api_key: str,
             for n in batch:
                 result[n] = n
             status = err
+
+    if progress_callback:
+        progress_callback(total_uni, total_uni, 0.0)
 
     for n in names:
         result.setdefault(n, n)
