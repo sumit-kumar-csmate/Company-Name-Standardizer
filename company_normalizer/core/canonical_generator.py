@@ -1,6 +1,6 @@
 """Canonical name generator — produces the final standardised output name."""
 
-from company_normalizer.processors.country_specific.ind_pak_ban_sl.singular_plural_handler import normalize_words_in_name
+from company_normalizer.processors.singular_plural_handler import normalize_words_in_name
 
 
 def generate_canonical(name_data: dict) -> str:

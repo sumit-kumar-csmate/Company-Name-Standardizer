@@ -1,5 +1,18 @@
-"""Confidence scorer — assigns High / Medium / Low and a Review Flag."""
+from spellchecker import SpellChecker
 
+# Dictionary for typo detection — helps flag names that need AI verification
+_spell = SpellChecker()
+
+# Common industry terms to watch for typos. 
+# We ONLY flag a word as a typo if it looks like one of these. 
+# This saves AI tokens by ignoring unique brand names like "Adiva".
+_CORE_INDUSTRY_TERMS = {
+    "polymer", "chemical", "industry", "service", "technology", "solution",
+    "enterprise", "project", "resource", "holding", "venture", "commodity",
+    "plastic", "metal", "steel", "power", "energy", "logistic", "transport",
+    "construction", "building", "development", "infrastructure", "agro", "pharma",
+    "health", "medical", "textile", "fabric", "system", "product", "engineering"
+}
 
 def calculate_confidence(name_data: dict, merge_reason: str = "All rules align"):
     """
@@ -32,7 +45,8 @@ def calculate_confidence(name_data: dict, merge_reason: str = "All rules align")
         reasons.append("Too many prefixes")
 
     # Flag single-character words (like "I", "S") to aggressively trigger AI verification
-    clean_words = name_data.get('cleaned_upper', '').split()
+    raw_cleaned = str(name_data.get('cleaned_upper', ''))
+    clean_words = raw_cleaned.split()
     if any(len(w) == 1 and w.isalpha() and w not in ["A", "&", "O"] for w in clean_words):
         score += 1
         reasons.append("Single-character word detected")
@@ -51,6 +65,19 @@ def calculate_confidence(name_data: dict, merge_reason: str = "All rules align")
                 score += 1
                 reasons.append(f"Merged keyword detected: {kw} inside {w}")
                 break
+
+    # SMART TYPO DETECTION: Only flag unknown words if they look like industry terms!
+    # This prevents brand names like "Adiva" or "Aglo" from wasting AI tokens.
+    unknowns = _spell.unknown([w.lower() for w in clean_words if len(w) > 3])
+    found_typos = []
+    for unk in unknowns:
+        corr = _spell.correction(unk)
+        if corr and corr.lower() in _CORE_INDUSTRY_TERMS:
+            found_typos.append(f"{unk}->{corr}")
+    
+    if found_typos:
+        score += 1
+        reasons.append(f"Likely industry typos: {', '.join(found_typos)}")
 
     if score == 0:
         return "High", "NO"
