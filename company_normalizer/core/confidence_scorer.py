@@ -1,11 +1,11 @@
-from spellchecker import SpellChecker
+from company_normalizer.config.shared import spell as _spell
 
 # Dictionary for typo detection — helps flag names that need AI verification
-_spell = SpellChecker()
+# (Imported as a shared singleton — no second dictionary load on startup)
 
-# Common industry terms to watch for typos. 
-# We ONLY flag a word as a typo if it looks like one of these. 
-# This saves AI tokens by ignoring unique brand names like "Adiva".
+# Pre-computed prefix set for fast short-circuit before spell.correction().
+# Only words whose first 3 chars match an industry term prefix go through
+# the expensive edit-distance check.
 _CORE_INDUSTRY_TERMS = {
     "polymer", "chemical", "industry", "service", "technology", "solution",
     "enterprise", "project", "resource", "holding", "venture", "commodity",
@@ -13,6 +13,8 @@ _CORE_INDUSTRY_TERMS = {
     "construction", "building", "development", "infrastructure", "agro", "pharma",
     "health", "medical", "textile", "fabric", "system", "product", "engineering"
 }
+_INDUSTRY_PREFIXES = frozenset(term[:3] for term in _CORE_INDUSTRY_TERMS)
+
 
 def calculate_confidence(name_data: dict, merge_reason: str = "All rules align"):
     """
@@ -71,10 +73,16 @@ def calculate_confidence(name_data: dict, merge_reason: str = "All rules align")
     unknowns = _spell.unknown([w.lower() for w in clean_words if len(w) > 3])
     found_typos = []
     for unk in unknowns:
+        # ── Optimization 3: Prefix short-circuit ─────────────────────────────
+        # spell.correction() is expensive (edit-distance against full dictionary).
+        # Skip it entirely if the word's first 3 chars don't match ANY industry
+        # term prefix — a near-zero-cost O(1) frozenset lookup.
+        if unk[:3] not in _INDUSTRY_PREFIXES:
+            continue
         corr = _spell.correction(unk)
         if corr and corr.lower() in _CORE_INDUSTRY_TERMS:
             found_typos.append(f"{unk}->{corr}")
-    
+
     if found_typos:
         score += 1
         reasons.append(f"Likely industry typos: {', '.join(found_typos)}")
