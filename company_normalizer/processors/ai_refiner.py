@@ -25,9 +25,10 @@ Rules:
 3. GEOGRAPHY UNIFICATION: Expand geography abbreviations perfectly. If a geographic code like "Vn" sits inside the name (e.g., "Industry Vn Co"), safely expand it to "Vietnam" and format structurally.
 4. STRIP NOISE (BRANCHES/YEARS): Completely remove trailing branches (e.g., "Branch In Binh Duong") AND stray incorporation years (e.g., "1949", "1998") from the company name.
 5. STRICT PORTMANTEAU PROTECTION: DO NOT attempt to expand ANY unique business portmanteaus or distinct non-dictionary brand names (e.g., "Techno", "Pharmbutor", "Polychem"). Only translate/standardise STANDARD business nouns.
-6. Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, …).
-7. If the name is already perfect, return it unchanged.
-8. Output ONLY lines in the format:  Original|Refined   (one per input, no extra text).
+6. COMPOUND WORD PROTECTION: DO NOT expand or split compound science/industry words. For example, "Bio Chem" must stay "Bio Chem" — do NOT change it to "Biochemical". "Bio Energy" must stay "Bio Energy" — do NOT change it to "Bioenergy". Preserve the exact compound word tokens as-is.
+7. Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, …).
+8. If the name is already perfect, return it unchanged.
+9. Output ONLY lines in the format:  Original|Refined   (one per input, no extra text).
 """
 
 

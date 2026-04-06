@@ -106,17 +106,18 @@ def can_merge(d1: dict, d2: dict, conflict_bases: set = None):
         # This safely enables universal missing-suffix matching for ALL suffix types.
         pass
 
+    # Rule 1b: Space-only difference — checked BEFORE descriptors intentionally.
+    # If two names are identical once spaces are stripped, the descriptor difference
+    # is purely a spacing artefact (e.g. BIOENERGY vs BIO ENERGY), not a real conflict.
+    b1, b2 = d1.get('base_name', ''), d2.get('base_name', '')
+    if _names_differ_only_by_spaces(b1, b2):
+        return True, "SPACE_ONLY"
+
     # Rule 2: Functional descriptors
     if not descriptors_allow_merge(d1.get('descriptors', set()), d2.get('descriptors', set())):
         return False, "Functional descriptor conflict"
 
     # Rule 3: Base name comparison
-    b1, b2 = d1.get('base_name', ''), d2.get('base_name', '')
-
-    # Space-only difference (high confidence merge)
-    if _names_differ_only_by_spaces(b1, b2):
-        return True, "SPACE_ONLY"
-
     if b1 != b2:
         # Check word-order or approved singular/plural
         if names_are_word_order_variants(b1, b2) or names_differ_only_by_approved_pairs(b1, b2):
@@ -182,10 +183,13 @@ def build_merge_groups(name_data_list: list) -> list:
         ri, rj = find(i), find(j)
         if ri != rj:
             parent[rj] = ri
-            # Propagate the "weaker" (more uncertain) reason upward
             existing = reason_map.get(ri, "All rules align")
+            # Priority order (weakest wins so manual review is preserved):
+            #   AND_PVT_LTD_ONLY > SPACE_ONLY > All rules align
             if reason == "AND_PVT_LTD_ONLY" or existing == "AND_PVT_LTD_ONLY":
                 reason_map[ri] = "AND_PVT_LTD_ONLY"
+            elif reason == "SPACE_ONLY" or existing == "SPACE_ONLY":
+                reason_map[ri] = "SPACE_ONLY"
             else:
                 reason_map[ri] = existing
 

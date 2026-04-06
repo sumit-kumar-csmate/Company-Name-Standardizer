@@ -1,6 +1,23 @@
 """Canonical name generator — produces the final standardised output name."""
 
+import re
 from company_normalizer.processors.singular_plural_handler import normalize_words_in_name
+
+# ── Compound-word prefixes: space-split variants collapse to solid form ────────
+# e.g. "BIO ENERGY" → "BIOENERGY", "AGRO CHEMICALS" → "AGROCHEMICALS"
+# This runs on the UPPER-CASE string so matching is case-insensitive.
+_COMPOUND_PREFIX_RE = re.compile(
+    r'\b(BIO|AGRO|CHEMO|PETRO|AERO|HYDRO|ELECTRO|MICRO|MACRO|NANO|POLY|AGRI|PHARMA)\s+(?=[A-Z])'
+)
+
+
+def _normalize_compound_words(name_upper: str) -> str:
+    """
+    Collapse space-separated compound-word prefixes to their solid form.
+    e.g. "BIO ENERGY" -> "BIOENERGY", "BIO CHEM" -> "BIOCHEM".
+    Runs on the UPPER-CASE version; caller must title-case afterwards.
+    """
+    return _COMPOUND_PREFIX_RE.sub(lambda m: m.group(1), name_upper)
 
 
 def generate_canonical(name_data: dict) -> str:
@@ -142,7 +159,16 @@ def generate_canonical_for_group(name_data_list: list, group_indices: list,
     if not group_indices:
         return ""
 
-    # ── Elect the best-quality primary (replaces always using [0]) ────────────
+    # ── SPACE_ONLY: all variants are identical once spaces are stripped.
+    # Pick whichever member has the LONGEST base_name (most explicit spacing).
+    if merge_reason == "SPACE_ONLY":
+        longest_idx = max(
+            group_indices,
+            key=lambda i: len(name_data_list[i].get('base_name', ''))
+        )
+        return generate_canonical(name_data_list[longest_idx])
+
+    # ── Elect the best-quality primary (replaces always using [0]) ──────────
     best_idx = _elect_primary(name_data_list, group_indices)
     primary  = name_data_list[best_idx]
     family   = primary.get('legal_family')

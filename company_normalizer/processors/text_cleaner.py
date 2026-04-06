@@ -97,10 +97,20 @@ def clean_text(raw_name: str):
     # Remove non-printable chars
     text = ''.join(c for c in text if c.isprintable())
 
-    # ── STEP 0: Alias Stripping ──────────────────────────────────────────────
+    # ── STEP 0a: Alias Stripping ────────────────────────────────────────────
     # Strip "Trading As" (T/A, T A) or "Doing Business As" (DBA) if they appear
     # AFTER the start of the company name (requires preceding whitespace)
     text = re.sub(r'(?i)\s+\b(?:T/A|T\.?A\.?|D/B/A|DBA|TRADING AS|DOING BUSINESS AS)\b.*', '', text)
+
+    # ── STEP 0b: Normalise hyphenated compound words ──────────────────────
+    # Collapse "BIO-CHEM" -> "BIOCHEM", "BIO-ENERGY" -> "BIOENERGY" etc.
+    # so that hyphenated and non-hyphenated variants normalise to the same token
+    # BEFORE the global hyphen-to-spaces replacement fires in STEP 1.
+    _COMPOUND_PREFIXES = (
+        r'(?i)\b(bio|agro|chemo|petro|aero|hydro|electro|micro|macro|nano|poly|agri|pharma)'
+        r'\s*-\s*'
+    )
+    text = re.sub(_COMPOUND_PREFIXES, lambda m: m.group(1), text)
 
     # ── STEP 1: Replace special chars with 4 spaces; & → "and" ──────────────
     text = text.replace('&', ' and ')

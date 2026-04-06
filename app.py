@@ -82,6 +82,29 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
             if conf in ("Medium", "Low"):
                 ai_candidates.add(canon)
 
+    # --- NEAR-DUPLICATE DETECTION (≥95% similarity) ---
+    import difflib
+    # Build: canonical → list of row indices
+    canon_to_rows: dict = {}
+    for i, nd in enumerate(name_data):
+        c = idx_to_canon.get(i, "")
+        canon_to_rows.setdefault(c, []).append(i)
+
+    unique_canons = list(canon_to_rows.keys())
+    near_dup_canons: set = set()          # canonicals involved in near-duplicate pairs
+
+    for a in range(len(unique_canons)):
+        for b in range(a + 1, len(unique_canons)):
+            ca, cb = unique_canons[a], unique_canons[b]
+            ratio = difflib.SequenceMatcher(None, ca.lower(), cb.lower()).ratio()
+            if ratio >= 0.95:
+                near_dup_canons.add(ca)
+                near_dup_canons.add(cb)
+                # Send both groups to AI for spell-check / disambiguation
+                ai_candidates.add(ca)
+                ai_candidates.add(cb)
+    # ----------------------------------------------------
+
     # Stage 4 — optional AI refinement
     ai_map: dict = {}
     ai_status: str = "Skipped (AI Disabled)"
@@ -176,6 +199,23 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
             subset_highlights.append(False)
     # --------------------------------
 
+    # Near-dup flag mutation — must run BEFORE Stage 6 writes lists into the df.
+    # IMPORTANT: use idx_to_canon (pre-AI canonical) not std_names (post-AI),
+    # because the AI may have corrected a name (e.g. COFOC→COFCO) which would
+    # change the string and break the near_dup_canons lookup.
+    near_dup_highlights = []
+    for i in range(len(std_names)):
+        original_canon = idx_to_canon.get(i, std_names[i])
+        if original_canon in near_dup_canons:
+            flags[i] = "YES"
+            if conf_scores[i] == "High":
+                conf_scores[i] = "Medium"
+            near_dup_highlights.append(True)
+        else:
+            near_dup_highlights.append(False)
+    # --------------------------------
+
+
     # Stage 6 — assemble result df (original column untouched)
     result = df.copy()
     col_pos = result.columns.get_loc(company_col) + 1
@@ -184,9 +224,10 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
     result["Review Flag"]      = flags
     if api_key:
         result["AI Verified Name"] = ai_names
-    result["Subset Highlight"] = subset_highlights
+    result["Subset Highlight"]   = subset_highlights
+    result["Near Dup Highlight"] = near_dup_highlights
 
-    return result, len(name_data), len(groups), ai_status
+    return result, len(name_data), len(groups), ai_status, near_dup_canons
 
 
 def to_excel(styled_obj) -> bytes:
@@ -344,7 +385,7 @@ def main():
         key_to_use = api_key if (enable_ai and api_key) else None
         with st.spinner("Processing …"):
             try:
-                result_df, total, n_groups, ai_status = process_dataframe(df, company_col, api_key=key_to_use)
+                result_df, total, n_groups, ai_status, near_dup_canons = process_dataframe(df, company_col, api_key=key_to_use)
             except Exception as e:
                 st.error(f"Processing error: {e}"); st.exception(e); return
 
@@ -398,16 +439,22 @@ def main():
         if only_changed:
             disp = disp[disp["Standardised Name"].str.lower() != disp[company_col].str.lower()]
 
-        # Prepare subset row highlighting
-        subset_indices = result_df.index[result_df["Subset Highlight"] == True].tolist()
+        # Prepare row highlighting:
+        #   Yellow  = subset name pair
+        #   Orange  = near-duplicate pair (≥95% similar, sent to AI)
+        subset_indices   = result_df.index[result_df["Subset Highlight"] == True].tolist()
+        near_dup_indices = result_df.index[result_df["Near Dup Highlight"] == True].tolist()
 
         def highlight_rows(x):
             df_styles = pd.DataFrame('', index=x.index, columns=x.columns)
-            mask = df_styles.index.isin(subset_indices)
-            df_styles.loc[mask, :] = 'background-color: #FFFF00; color: #000000;'
+            # Near-dup first (orange), then subset (yellow) — subset takes precedence
+            mask_nd = df_styles.index.isin(near_dup_indices)
+            df_styles.loc[mask_nd, :] = 'background-color: #B5ECEA; color: #000000;'
+            mask_ss = df_styles.index.isin(subset_indices)
+            df_styles.loc[mask_ss, :] = 'background-color: #FFFF00; color: #000000;'
             return df_styles
 
-        disp_to_show = disp.drop(columns=["Subset Highlight"])
+        disp_to_show = disp.drop(columns=["Subset Highlight", "Near Dup Highlight"])
 
         st.dataframe(disp_to_show.style.apply(highlight_rows, axis=None), use_container_width=True, height=380)
 
@@ -429,7 +476,7 @@ def main():
         stem = uploaded.name.rsplit(".", 1)[0]
         
         # Prepare components for download
-        export_df = result_df.drop(columns=["Subset Highlight"])
+        export_df = result_df.drop(columns=["Subset Highlight", "Near Dup Highlight"])
         export_styled = export_df.style.apply(highlight_rows, axis=None)
 
         d1.download_button("📥 CSV",
