@@ -24,7 +24,10 @@ def remove_prefixes(name: str):
             plen = len(pre_up)
             if plen == len(cur_up):
                 continue         # prefix IS the whole name
-            if cur_up[plen] == ' ':
+            
+            # Strip if it's a completely matched trade prefix, OR if followed by a space
+            from company_normalizer.config.prefixes import TRADE_PREFIXES
+            if prefix in TRADE_PREFIXES or cur_up[plen] == ' ':
                 current = current[plen:].strip()
                 removed.append(prefix)
                 changed = True

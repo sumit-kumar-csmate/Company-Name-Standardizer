@@ -73,6 +73,12 @@ ABBREVIATION_MAP = [
 _SPECIAL_CHARS_RE = re.compile(r'[&/,;:\'"()\[\]!?_\\@#*~`|<>{}=+\-.]')
 
 
+_UNICODE_MAP = str.maketrans(
+    "ÀÁÂÃÄÅĀĂĄǍàáâãäåāăąǎÇĆĈĊČçćĉċčĎĐďđÈÉÊËĒĔĖĘĚèéêëēĕėęěĜĞĠĢĝğġģĤĦĥħÌÍÎÏĨĪĬĮİìíîïĩīĭįıĴĵĶķĹĻĽŁĺļľłÑŃŅŇñńņňÒÓÔÕÖØŌŎŐǑòóôõöøōŏőǒŔŖŘŕŗřŚŜŞŠśŝşšŢŤŦţťŧÙÚÛÜŨŪŬŮŰŲùúûüũūŭůűųŴŵÝŶŸýŷÿŹŻŽźżž",
+    "AAAAAAAAAAaaaaaaaaaaCCCCCcccccDDddEEEEEEEEEeeeeeeeeeGGGGggggHHhhIIIIIIIIIiiiiiiiiiJjKkLLLLllllNNNNnnnnOOOOOOOOOOooooooooooRRRrrrSSSSssssTTTtttUUUUUUUUUUuuuuuuuuuuWwYYYyyyZZZzzz"
+)
+
+
 def _clean_trim_proper(text: str) -> str:
     """Collapse whitespace, strip, title-case."""
     text = ' '.join(text.split())
@@ -96,8 +102,11 @@ def clean_text(raw_name: str):
 
     # Remove non-printable chars
     text = ''.join(c for c in text if c.isprintable())
+    
+    # ── STEP 0a: Unicode Transliteration ────────────────────────────────────
+    text = text.translate(_UNICODE_MAP)
 
-    # ── STEP 0a: Alias Stripping ────────────────────────────────────────────
+    # ── STEP 0b: Alias Stripping ────────────────────────────────────────────
     # Strip "Trading As" (T/A, T A) or "Doing Business As" (DBA) if they appear
     # AFTER the start of the company name (requires preceding whitespace)
     text = re.sub(r'(?i)\s+\b(?:T/A|T\.?A\.?|D/B/A|DBA|TRADING AS|DOING BUSINESS AS)\b.*', '', text)

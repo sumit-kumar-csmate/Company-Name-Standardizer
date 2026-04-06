@@ -26,9 +26,10 @@ Rules:
 4. STRIP NOISE (BRANCHES/YEARS): Completely remove trailing branches (e.g., "Branch In Binh Duong") AND stray incorporation years (e.g., "1949", "1998") from the company name.
 5. STRICT PORTMANTEAU PROTECTION: DO NOT attempt to expand ANY unique business portmanteaus or distinct non-dictionary brand names (e.g., "Techno", "Pharmbutor", "Polychem"). Only translate/standardise STANDARD business nouns.
 6. COMPOUND WORD PROTECTION: DO NOT expand or split compound science/industry words. For example, "Bio Chem" must stay "Bio Chem" — do NOT change it to "Biochemical". "Bio Energy" must stay "Bio Energy" — do NOT change it to "Bioenergy". Preserve the exact compound word tokens as-is.
-7. Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, …).
-8. If the name is already perfect, return it unchanged.
-9. Output ONLY lines in the format:  Original|Refined   (one per input, no extra text).
+7. NO UNICODE/DIACRITICS: ALWAYS output using standard English alphabets (A-Z) only. Transliterate any unicode characters or diacritics (e.g., "Ö" -> "O", "ç" -> "c") into their standard ASCII Latin equivalents.
+8. Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, …).
+9. If the name is already perfect, return it unchanged.
+10. Output ONLY lines in the format:  Original|Refined   (one per input, no extra text).
 """
 
 

@@ -63,7 +63,7 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
 
     # Stage 2 — merge groups
     # Each group is now a dict: {'indices': [...], 'merge_reason': '...'}
-    groups = build_merge_groups(name_data)
+    groups, base_to_families = build_merge_groups(name_data)
 
     # Stage 3 — assign canonical names & identify AI candidates
     idx_to_canon: dict  = {}
@@ -73,7 +73,7 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
     for group in groups:
         indices      = group['indices']
         merge_reason = group['merge_reason']
-        canon_raw = generate_canonical_for_group(name_data, indices, merge_reason)
+        canon_raw = generate_canonical_for_group(name_data, indices, merge_reason, base_to_families)
         canon     = format_canonical_name(canon_raw)
         for i in indices:
             idx_to_canon[i]  = canon
@@ -125,16 +125,23 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
         )
         progress_bar.empty()
             
-        # Re-normalise AI outputs to strictly ensure Plural/Suffix rule compliance
+        # Re-normalise AI outputs through the FULL pipeline to ensure all rules are followed:
+        # address removal, prefix removal, unicode clean, text clean, suffix extraction, etc.
         for raw_canon, ai_refined in raw_ai_map.items():
             if ai_refined and ai_refined != raw_canon:
                 try:
                     nd = process_single_name(ai_refined)
+                    # generate_canonical applies suffix formatting + plural normalization
                     ai_map[raw_canon] = format_canonical_name(generate_canonical(nd))
                 except Exception:
                     ai_map[raw_canon] = ai_refined
             else:
-                ai_map[raw_canon] = ai_refined
+                # Even unchanged names go through the pipeline to catch any pre-existing issues
+                try:
+                    nd = process_single_name(ai_refined if ai_refined else raw_canon)
+                    ai_map[raw_canon] = format_canonical_name(generate_canonical(nd))
+                except Exception:
+                    ai_map[raw_canon] = ai_refined if ai_refined else raw_canon
                     
     elif api_key and not ai_candidates:
         ai_status = "Skipped (No flags found)"
