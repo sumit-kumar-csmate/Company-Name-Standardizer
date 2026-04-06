@@ -56,34 +56,23 @@ PROTECTED_WORDS = frozenset({
     "DENNIS", "ALEXIS", "THOMAS", "LUCAS", "DALLAS",
     "ROGERS", "WALKERS", "PHILIPS", "SIEMENS", "MARS",
     "ROLLS",  "JACOBS",  "OWENS",  "MARTINS", "REEVES",
-    # ── Words ending in -MERS that are NOT chemistry terms ────────────────────
-    # (Prevents the MERS rule from triggering on common English words)
-    "DREAMERS", "STREAMERS", "PRIMERS", "FARMERS", "TIMERS",
-    "SWIMMERS", "TRIMMERS", "PERFORMERS", "REFORMERS", "INFORMERS",
-
-    # ── Business identity words (the PLURAL IS the brand / legal form) ────────
-    "SONS",             # "Khurram And Sons" — brand identity
-    "BROTHERS",         # "M Brothers" — brand identity
-    "ASSOCIATES",       # Legal partnership term
-    "PARTNERS",         # Legal partnership term
-    "HOLDINGS",         # Corporate structure term
-    "COMMUNICATIONS",   # Brand identity
-    "DYNAMICS",         # Brand identity
-    "ELECTRONICS",      # Brand identity (too often part of brand name)
-    "GRAPHICS",         # Brand identity
+    # (Note: DREAMERS, STREAMERS, PRIMERS, FARMERS, TIMERS, SWIMMERS, TRIMMERS,
+    #  PERFORMERS, REFORMERS, INFORMERS, SONS, BROTHERS, ASSOCIATES, PARTNERS,
+    #  HOLDINGS, COMMUNICATIONS, DYNAMICS, ELECTRONICS, GRAPHICS have been moved
+    #  to ALLOWED_SINGULAR_MAP for proper singular conversion.)
 
     # ── Words where the singular is wrong / misleading ────────────────────────
     "OVERSEAS",         # Adjective/adverb — "Oversea" is not a word
     "GOODS",            # "Goods" means merchandise, not plural of "good"
-    "STATES",           # "United States" — never "United State"
-    "HEADQUARTERS",     # Already singular (invariant)
     "ILLINOIS",         # US State
     "CHAMOIS",          # Invariant word
+    # (STATES → STATE and HEADQUARTERS → HEADQUARTER moved to ALLOWED_SINGULAR_MAP)
 
     # ── Words ending in -ics that are invariant / brand ───────────────────────
     # (Prevent the ICALS / TICS pattern from triggering on these)
     "PHYSICS", "ETHICS", "ECONOMICS", "MATHEMATICS", "AEROBICS",
-    "ACOUSTICS", "ATHLETICS", "TACTICS", "LOGISTICS",
+    "ACOUSTICS", "ATHLETICS", "TACTICS",
+    # (LOGISTICS → LOGISTIC moved to ALLOWED_SINGULAR_MAP)
 })
 
 
@@ -236,10 +225,36 @@ ALLOWED_SINGULAR_MAP = {
     "INDUSTRIAS":       "INDUSTRY",
     "INDUSTRIAL":       "INDUSTRY",
 
-    #Countries
+    # ── Previously Protected — Now Singularized ──────────────────────────────
+    # Business identity words
+    "SONS":              "SON",
+    "BROTHERS":          "BROTHER",
+    "ASSOCIATES":        "ASSOCIATE",
+    "PARTNERS":          "PARTNER",
+    "HOLDINGS":          "HOLDING",
+    "COMMUNICATIONS":    "COMMUNICATION",
+    "DYNAMICS":          "DYNAMIC",
+    "ELECTRONICS":       "ELECTRONIC",
+    "GRAPHICS":          "GRAPHIC",
+    # Former -MERS non-chemistry words
+    "DREAMERS":          "DREAMER",
+    "STREAMERS":         "STREAMER",
+    "PRIMERS":           "PRIMER",
+    "FARMERS":           "FARMER",
+    "TIMERS":            "TIMER",
+    "SWIMMERS":          "SWIMMER",
+    "TRIMMERS":          "TRIMMER",
+    "PERFORMERS":        "PERFORMER",
+    "REFORMERS":         "REFORMER",
+    "INFORMERS":         "INFORMER",
+    # General words previously blocking singular conversion
+    "STATES":            "STATE",
+    "HEADQUARTERS":      "HEADQUARTER",
+    "LOGISTICS":         "LOGISTIC",
+    # Countries
     "Netherlands":       "Netherland",
-    "Nederlands":       "Netherland",
-    "Nederland":       "Netherland"
+    "Nederlands":        "Netherland",
+    "Nederland":         "Netherland"
 }
 
 
