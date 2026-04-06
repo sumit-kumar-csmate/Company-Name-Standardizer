@@ -82,7 +82,7 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
             if conf in ("Medium", "Low"):
                 ai_candidates.add(canon)
 
-    # --- NEAR-DUPLICATE DETECTION (≥95% similarity) ---
+    # --- NEAR-DUPLICATE DETECTION (≥90% similarity) ---
     import difflib
     # Build: canonical → list of row indices
     canon_to_rows: dict = {}
@@ -97,7 +97,7 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
         for b in range(a + 1, len(unique_canons)):
             ca, cb = unique_canons[a], unique_canons[b]
             ratio = difflib.SequenceMatcher(None, ca.lower(), cb.lower()).ratio()
-            if ratio >= 0.95:
+            if ratio >= 0.90:
                 near_dup_canons.add(ca)
                 near_dup_canons.add(cb)
                 # Send both groups to AI for spell-check / disambiguation
@@ -441,7 +441,7 @@ def main():
 
         # Prepare row highlighting:
         #   Yellow  = subset name pair
-        #   Orange  = near-duplicate pair (≥95% similar, sent to AI)
+        #   Orange  = near-duplicate pair (≥90% similar, sent to AI)
         subset_indices   = result_df.index[result_df["Subset Highlight"] == True].tolist()
         near_dup_indices = result_df.index[result_df["Near Dup Highlight"] == True].tolist()
 
