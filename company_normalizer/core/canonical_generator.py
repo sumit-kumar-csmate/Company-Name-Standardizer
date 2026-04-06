@@ -161,35 +161,32 @@ def generate_canonical_for_group(name_data_list: list, group_indices: list,
     if not group_indices:
         return ""
 
-    # ── SPACE_ONLY: all variants are identical once spaces are stripped.
-    # Pick whichever member has the LONGEST base_name (most explicit spacing).
     if merge_reason == "SPACE_ONLY":
+        # Pick whichever member has the LONGEST base_name (most explicit spacing).
         longest_idx = max(
             group_indices,
             key=lambda i: len(name_data_list[i].get('base_name', ''))
         )
-        return generate_canonical(name_data_list[longest_idx])
-
-    # ── Elect the best-quality primary (replaces always using [0]) ──────────
-    best_idx = _elect_primary(name_data_list, group_indices)
-    primary  = name_data_list[best_idx]
-    family   = primary.get('legal_family')
+        primary = name_data_list[longest_idx].copy()
+        family = primary.get('legal_family')
+    else:
+        # ── Elect the best-quality primary (replaces always using [0]) ──────────
+        best_idx = _elect_primary(name_data_list, group_indices)
+        primary  = name_data_list[best_idx].copy()
+        family   = primary.get('legal_family')
 
     # ── AND/PVT/LTD merge canonical ──────────────────────────────────────────
     if merge_reason == "AND_PVT_LTD_ONLY":
-        # Pick the member whose cleaned text is longest (most complete)
         longest_idx = max(group_indices,
                           key=lambda i: len(name_data_list[i].get('cleaned_upper', '')))
         best        = name_data_list[longest_idx]
         canon       = best.get('cleaned_upper', '')
 
-        # Gather all AND/PRIVATE/LIMITED words from all members
         all_cleaned = [name_data_list[i].get('cleaned_upper', '') for i in group_indices]
         needed      = _merge_andpvtltd_words(all_cleaned)
         present     = set(w for w in canon.split() if w in needed)
         missing     = needed - present
 
-        # Insert missing words into canon at natural positions
         words = canon.split()
         for mw in sorted(missing):
             if mw == "AND":
@@ -212,8 +209,9 @@ def generate_canonical_for_group(name_data_list: list, group_indices: list,
             else:
                 words.append(mw)
 
-        norm = normalize_words_in_name(' '.join(words))
-        return norm.strip()
+        norm = normalize_words_in_name(' '.join(words)).strip()
+        # Ensure we still apply the suffix!
+        primary['base_name'] = norm
 
     # ── Standard Suffix Forcing ──────────────────────────────────────────────
     all_families = set(name_data_list[i].get('legal_family') for i in group_indices if name_data_list[i].get('legal_family'))
