@@ -70,6 +70,11 @@ def _anagrams_ignoring_andpvtltd(name1: str, name2: str) -> bool:
     return bool(w1) and w1 == w2
 
 
+def _stripped(name: str) -> str:
+    """Helper to remove spaces and uppercase a string for structural comparison."""
+    return name.upper().replace(' ', '') if name else ""
+
+
 def _names_differ_only_by_spaces(name1: str, name2: str) -> bool:
     """
     Return True if names are identical after removing all spaces
@@ -97,7 +102,7 @@ def can_merge(d1: dict, d2: dict, base_to_families: dict = None):
             # Hierarchical Suffix logic
             fam_set = {f1, f2}
             b1 = d1.get('base_name', '')
-            my_fams = base_to_families.get(b1, set())
+            my_fams = base_to_families.get(_stripped(b1), set())
             if fam_set == {"LIMITED_FAMILY", "PRIVATE_LIMITED_FAMILY"}:
                 if "CO_LIMITED_FAMILY" not in my_fams:
                     pass  # ALLOW merge of Limited and Private Limited
@@ -115,16 +120,13 @@ def can_merge(d1: dict, d2: dict, base_to_families: dict = None):
         f_present = f1 or f2
         b1, b2 = d1.get('base_name', ''), d2.get('base_name', '')
         b_target = b1 if b1 else b2
-        my_fams = base_to_families.get(b_target, set())
+        my_fams = base_to_families.get(_stripped(b_target), set())
         
         if len(my_fams) > 1:
             if my_fams == {"LIMITED_FAMILY", "PRIVATE_LIMITED_FAMILY"} or my_fams == {"LIMITED_FAMILY", "CO_LIMITED_FAMILY"}:
                 pass # not a conflict
             else:
-                if f_present == "LIMITED_FAMILY":
-                    pass # Allow no-suffix to merge with base Limited
-                else:
-                    return False, "Global suffix conflict blocks missing-suffix merge"
+                return False, "Global suffix conflict blocks missing-suffix merge"
 
     # Rule 1b: Space-only difference — checked BEFORE descriptors intentionally.
     # If two names are identical once spaces are stripped, the descriptor difference
@@ -182,7 +184,7 @@ def build_merge_groups(name_data_list: list) -> list:
             continue
         fam = d.get('legal_family')
         if fam:
-            base_to_families.setdefault(base, set()).add(fam)
+            base_to_families.setdefault(_stripped(base), set()).add(fam)
             
     # 2. Union-Find merge
     parent = list(range(n))
@@ -226,4 +228,4 @@ def build_merge_groups(name_data_list: list) -> list:
             'indices':      indices,
             'merge_reason': reason_map.get(root, "All rules align"),
         })
-    return result
+    return result, base_to_families

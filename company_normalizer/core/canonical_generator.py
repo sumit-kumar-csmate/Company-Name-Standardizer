@@ -140,7 +140,7 @@ def _merge_andpvtltd_words(names_upper: list) -> set:
 
 
 def generate_canonical_for_group(name_data_list: list, group_indices: list,
-                                  merge_reason: str = "All rules align") -> str:
+                                  merge_reason: str = "All rules align", base_to_families: dict = None) -> str:
     """
     One canonical name for a whole merge group.
 
@@ -158,6 +158,8 @@ def generate_canonical_for_group(name_data_list: list, group_indices: list,
     PRIVATE_LIMITED_FAMILY rule:
       If ANY member has "PRIVATE LIMITED", the whole group gets "PRIVATE LIMITED".
     """
+    base_to_families = base_to_families or {}
+    
     if not group_indices:
         return ""
 
