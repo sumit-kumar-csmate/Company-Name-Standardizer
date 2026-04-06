@@ -68,11 +68,12 @@ LEGAL_SUFFIX_MAP = {
     "PTE":             ("PRIVATE",         PRIVATE_LIMITED_FAMILY),
     "PT":              ("PT",              PRIVATE_LIMITED_FAMILY),
     "PT.":             ("PT",              PRIVATE_LIMITED_FAMILY),
-    "LIMITED":         ("LIMITED",         PRIVATE_LIMITED_FAMILY),
-    "LTD":             ("LIMITED",         PRIVATE_LIMITED_FAMILY),
-    "LTD.":            ("LIMITED",         PRIVATE_LIMITED_FAMILY),
+    "LIMITED":         ("LIMITED",         "LIMITED_FAMILY"),
+    "LTD":             ("LIMITED",         "LIMITED_FAMILY"),
+    "LTD.":            ("LIMITED",         "LIMITED_FAMILY"),
 
     # ── CO. LIMITED ─────────────────────────
+    "CO LIMITED": ("CO LIMITED", CO_LIMITED_FAMILY),
     "CO LTD":   ("CO LIMITED", CO_LIMITED_FAMILY),
     "CO. LTD":  ("CO LIMITED", CO_LIMITED_FAMILY),
     "CO. LTD.": ("CO LIMITED", CO_LIMITED_FAMILY),

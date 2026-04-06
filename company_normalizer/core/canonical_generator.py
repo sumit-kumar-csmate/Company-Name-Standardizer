@@ -71,6 +71,8 @@ def _quality_score(name_data: dict) -> tuple:
     suffix_score = 0
     if 'PRIVATE LIMITED' in suffix.upper():
         suffix_score = 3
+    elif 'CO LIMITED' in suffix.upper():
+        suffix_score = 3
     elif 'LIMITED' in suffix.upper():
         suffix_score = 2
     elif suffix.strip():
@@ -213,21 +215,23 @@ def generate_canonical_for_group(name_data_list: list, group_indices: list,
         norm = normalize_words_in_name(' '.join(words))
         return norm.strip()
 
-    # ── Standard PRIVATE_LIMITED_FAMILY rule ─────────────────────────────────
-    active_family = family
-    if not active_family:
-        families = [name_data_list[i].get('legal_family') for i in group_indices if name_data_list[i].get('legal_family')]
-        if families:
-            active_family = families[0]
-
+    # ── Standard Suffix Forcing ──────────────────────────────────────────────
+    all_families = set(name_data_list[i].get('legal_family') for i in group_indices if name_data_list[i].get('legal_family'))
+    
     forced = None
-    if active_family == "PRIVATE_LIMITED_FAMILY":
+    if "CO_LIMITED_FAMILY" in all_families:
+        forced = "CO LIMITED"
+    elif "PRIVATE_LIMITED_FAMILY" in all_families:
+        # Check if anyone explicitly had "PRIVATE LIMITED" or similar extracted
         has_private = any(
             name_data_list[i].get('legal_suffix') == "PRIVATE LIMITED"
             for i in group_indices
         )
         forced = "PRIVATE LIMITED" if has_private else "LIMITED"
-    elif not family and active_family:
+    elif "LIMITED_FAMILY" in all_families:
+        forced = "LIMITED"
+    elif not family and all_families:
+        # Fallback for missing suffix primary member when a suffix exists in group
         for i in group_indices:
             sfx = name_data_list[i].get('legal_suffix')
             if sfx:

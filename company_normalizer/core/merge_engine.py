@@ -81,30 +81,50 @@ def _names_differ_only_by_spaces(name1: str, name2: str) -> bool:
             and name1.upper() != name2.upper())
 
 
-def can_merge(d1: dict, d2: dict, conflict_bases: set = None):
+def can_merge(d1: dict, d2: dict, base_to_families: dict = None):
     """
     Returns (can_merge: bool, reason: str).
     reason may include 'AND_PVT_LTD_ONLY', 'SPACE_ONLY', or 'MISSING_SUFFIX' as merge sub-reasons.
     """
-    conflict_bases = conflict_bases or set()
+    base_to_families = base_to_families or {}
     f1, f2 = d1.get('legal_family'), d2.get('legal_family')
 
     # Rule 1: Legal families
     if f1 and f2:
-        if not suffixes_can_merge(f1, f2):
-            return False, "Legal family mismatch"
+        if suffixes_can_merge(f1, f2):
+            pass  # normally allowed
+        else:
+            # Hierarchical Suffix logic
+            fam_set = {f1, f2}
+            b1 = d1.get('base_name', '')
+            my_fams = base_to_families.get(b1, set())
+            if fam_set == {"LIMITED_FAMILY", "PRIVATE_LIMITED_FAMILY"}:
+                if "CO_LIMITED_FAMILY" not in my_fams:
+                    pass  # ALLOW merge of Limited and Private Limited
+                else:
+                    return False, "Hierarchical mismatch (Co Limited present)"
+            elif fam_set == {"LIMITED_FAMILY", "CO_LIMITED_FAMILY"}:
+                if "PRIVATE_LIMITED_FAMILY" not in my_fams:
+                    pass  # ALLOW merge of Limited and Co Limited
+                else:
+                    return False, "Hierarchical mismatch (Private Limited present)"
+            else:
+                return False, "Legal family mismatch"
     elif f1 or f2:
         # One has a suffix, other doesn't.
-        # Check global conflicts: if this base name is associated with multiple
-        # distinct suffixes across the dataset, we cannot safely merge the suffix-less version.
-        b1 = d1.get('base_name', '')
-        b2 = d2.get('base_name', '')
-        if (b1 and b1 in conflict_bases) or (b2 and b2 in conflict_bases):
-            return False, "Global suffix conflict blocks missing-suffix merge"
+        f_present = f1 or f2
+        b1, b2 = d1.get('base_name', ''), d2.get('base_name', '')
+        b_target = b1 if b1 else b2
+        my_fams = base_to_families.get(b_target, set())
         
-        # If no global conflict, we let it fall through to Rule 3 (base name check).
-        # This safely enables universal missing-suffix matching for ALL suffix types.
-        pass
+        if len(my_fams) > 1:
+            if my_fams == {"LIMITED_FAMILY", "PRIVATE_LIMITED_FAMILY"} or my_fams == {"LIMITED_FAMILY", "CO_LIMITED_FAMILY"}:
+                pass # not a conflict
+            else:
+                if f_present == "LIMITED_FAMILY":
+                    pass # Allow no-suffix to merge with base Limited
+                else:
+                    return False, "Global suffix conflict blocks missing-suffix merge"
 
     # Rule 1b: Space-only difference — checked BEFORE descriptors intentionally.
     # If two names are identical once spaces are stripped, the descriptor difference
@@ -164,11 +184,6 @@ def build_merge_groups(name_data_list: list) -> list:
         if fam:
             base_to_families.setdefault(base, set()).add(fam)
             
-    conflict_bases = set()
-    for base, families in base_to_families.items():
-        if len(families) > 1:
-            conflict_bases.add(base)
-
     # 2. Union-Find merge
     parent = list(range(n))
     reason_map: dict = {}   # edge (i, j) → reason
@@ -195,7 +210,7 @@ def build_merge_groups(name_data_list: list) -> list:
 
     for i in range(n):
         for j in range(i + 1, n):
-            ok, reason = can_merge(name_data_list[i], name_data_list[j], conflict_bases)
+            ok, reason = can_merge(name_data_list[i], name_data_list[j], base_to_families)
             if ok:
                 union(i, j, reason)
 
