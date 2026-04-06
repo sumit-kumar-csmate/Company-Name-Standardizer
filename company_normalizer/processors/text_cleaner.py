@@ -16,7 +16,9 @@ import re
 # Applied AFTER the first clean/trim and BEFORE the second clean/trim.
 # ORDER MATTERS — longer/more specific patterns first.
 ABBREVIATION_MAP = [
-    # "and" expansions (& already handled in step 1)
+    # Run-on typos missing a space (e.g., Chemicalprivate -> Chemical Private)
+    (r'([A-Za-z]{2,})private\b', r'\g<1> Private'),
+    (r'([A-Za-z]{2,})pvt\b',     r'\g<1> Private'),
     # Pvt / Pte / Priv variants → Private  (with optional dot, word-boundary)
     (r'\bPvt\.?\b',            'Private'),
     (r'\bPVT\.?\b',            'Private'),
@@ -28,9 +30,17 @@ ABBREVIATION_MAP = [
     # P LTD / P. LTD / P.LTD → Private Limited
     (r'\bP(?:\.\s*|\s+)(?:Ltd|Limited)\.?\b', 'Private Limited'),
     (r'\bP(?:\.\s*|\s+)(?:LTD|LIMITED)\.?\b', 'Private Limited'),
-    # Ltd / Ltda / Limite / Limi / Lim (end only) → Limited
+    # Ltd / Ltda / Limitada / Limiteda / Limite / Limi / Lim (end only) → Limited
     (r'\bLtda?\b\.?',          'Limited'),
     (r'\bLTDA?\b\.?',          'Limited'),
+    (r'\bLimitada\b\.?',       'Limited'),
+    (r'\bLIMITADA\b\.?',       'Limited'),
+    (r'\bLimiteda\b\.?',       'Limited'),
+    (r'\bLIMITEDA\b\.?',       'Limited'),
+    (r'\bLimitad\s+a\b\.?',    'Limited'),
+    (r'\bLIMITAD\s+A\b\.?',    'Limited'),
+    (r'\bLimited\s+a\b\.?',    'Limited'),
+    (r'\bLIMITED\s+A\b\.?',    'Limited'),
     (r'\bLimite\b',            'Limited'),
     (r'\bLIMITE\b',            'Limited'),
     (r'\bLimi\b',              'Limited'),
@@ -86,6 +96,11 @@ def clean_text(raw_name: str):
 
     # Remove non-printable chars
     text = ''.join(c for c in text if c.isprintable())
+
+    # ── STEP 0: Alias Stripping ──────────────────────────────────────────────
+    # Strip "Trading As" (T/A, T A) or "Doing Business As" (DBA) if they appear
+    # AFTER the start of the company name (requires preceding whitespace)
+    text = re.sub(r'(?i)\s+\b(?:T/A|T\.?A\.?|D/B/A|DBA|TRADING AS|DOING BUSINESS AS)\b.*', '', text)
 
     # ── STEP 1: Replace special chars with 4 spaces; & → "and" ──────────────
     text = text.replace('&', ' and ')

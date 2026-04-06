@@ -132,6 +132,50 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
         ai_names.append(ai_can if ai_can != canon else "")
         sources.append("AI + RULE" if ai_can != canon else get_decision_source())
 
+    # --- NEW SUBSET DETECTION LOGIC ---
+    unique_std = list(set(std_names))
+    subset_involved = set()
+    
+    # Pad with spaces for exact word boundary match
+    padded = {n: f" {str(n).lower()} " for n in unique_std if isinstance(n, str)}
+    for i in range(len(unique_std)):
+        for j in range(i+1, len(unique_std)):
+            n1 = unique_std[i]
+            n2 = unique_std[j]
+            if not isinstance(n1, str) or not isinstance(n2, str):
+                continue
+            
+            p1 = padded[n1]
+            p2 = padded[n2]
+            
+            w1 = len(n1.split())
+            w2 = len(n2.split())
+            if w1 == 0 or w2 == 0:
+                continue
+
+            # Check for contiguous word subsets
+            if len(p1) > len(p2):
+                if p2 in p1:
+                    subset_involved.add(n1)
+                    subset_involved.add(n2)
+            elif len(p2) > len(p1):
+                if p1 in p2:
+                    subset_involved.add(n1)
+                    subset_involved.add(n2)
+
+    subset_highlights = []
+    for i in range(len(std_names)):
+        n = std_names[i]
+        if n in subset_involved:
+            flags[i] = "YES"
+            # Ensure it is flagged for review by keeping confidence <= Medium
+            if conf_scores[i] == "High":
+                conf_scores[i] = "Medium"
+            subset_highlights.append(True)
+        else:
+            subset_highlights.append(False)
+    # --------------------------------
+
     # Stage 6 — assemble result df (original column untouched)
     result = df.copy()
     col_pos = result.columns.get_loc(company_col) + 1
@@ -140,14 +184,15 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
     result["Review Flag"]      = flags
     if api_key:
         result["AI Verified Name"] = ai_names
+    result["Subset Highlight"] = subset_highlights
 
     return result, len(name_data), len(groups), ai_status
 
 
-def to_excel(df: pd.DataFrame) -> bytes:
+def to_excel(styled_obj) -> bytes:
     buf = BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as w:
-        df.to_excel(w, index=False, sheet_name="Normalised")
+        styled_obj.to_excel(w, index=False, sheet_name="Normalised")
     return buf.getvalue()
 
 
@@ -307,9 +352,15 @@ def main():
         
         if enable_ai and api_key:
             if ai_status == "OK":
-                st.success(f"🤖 **AI Status:** OK (Model: gemini-2.5-flash)")
+                st.success(f"🤖 **AI Status:** OK — names refined successfully.")
             elif ai_status.startswith("Skipped"):
                 st.info(f"🤖 **AI Status:** {ai_status}")
+            elif "Proxy Error" in ai_status or "proxy" in ai_status.lower():
+                st.warning(
+                    f"⚠️ **AI Proxy Unavailable** — The proxy server (`proxy.abhibots.com`) "
+                    f"is currently down. Rule-based results are still complete and accurate. "
+                    f"Try again later to apply AI refinement."
+                )
             else:
                 st.error(f"🤖 **AI Status (Error):** {ai_status}")
 
@@ -347,7 +398,18 @@ def main():
         if only_changed:
             disp = disp[disp["Standardised Name"].str.lower() != disp[company_col].str.lower()]
 
-        st.dataframe(disp, use_container_width=True, height=380)
+        # Prepare subset row highlighting
+        subset_indices = result_df.index[result_df["Subset Highlight"] == True].tolist()
+
+        def highlight_rows(x):
+            df_styles = pd.DataFrame('', index=x.index, columns=x.columns)
+            mask = df_styles.index.isin(subset_indices)
+            df_styles.loc[mask, :] = 'background-color: #FFFF00; color: #000000;'
+            return df_styles
+
+        disp_to_show = disp.drop(columns=["Subset Highlight"])
+
+        st.dataframe(disp_to_show.style.apply(highlight_rows, axis=None), use_container_width=True, height=380)
 
         # Sample transformations
         st.markdown("#### ✨ Sample Transformations")
@@ -365,12 +427,17 @@ def main():
         st.markdown("#### 💾 Download")
         d1, d2 = st.columns(2)
         stem = uploaded.name.rsplit(".", 1)[0]
+        
+        # Prepare components for download
+        export_df = result_df.drop(columns=["Subset Highlight"])
+        export_styled = export_df.style.apply(highlight_rows, axis=None)
+
         d1.download_button("📥 CSV",
-            result_df.to_csv(index=False).encode("utf-8"),
+            export_df.to_csv(index=False).encode("utf-8"),
             f"normalised_{stem}.csv", "text/csv",
             use_container_width=True)
         d2.download_button("📥 Excel",
-            to_excel(result_df),
+            to_excel(export_styled),
             f"normalised_{stem}.xlsx",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True)

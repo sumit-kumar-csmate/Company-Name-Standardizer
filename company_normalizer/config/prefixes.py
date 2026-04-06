@@ -6,14 +6,24 @@ Longer/more-specific prefixes come first so "TO THE ORDER OF" is matched before 
 # Trade/Shipment Prefixes
 TRADE_PREFIXES = [
     "CONSIGNEE TO",
+    "CONSIGNEE",
     "TO THE ORDER OF",
     "TO THE ORDER",
     "TO ORDER OF",
     "TO ORDER",
     "NOTIFIED PARTY",
+    "NOTIFY",
+    "NOTIFY PARTY",
     "ON BEHALF OF",
+    "O/B",
+    "BY ORDER OF",
+    "B/O",
     "CARE OF",
     "C/O",
+    "ACCOUNT OF",
+    "A/C",
+    "F/A",
+    "FOR THE ACCOUNT OF",
 ]
 
 # Business Prefixes
@@ -24,8 +34,11 @@ BUSINESS_PREFIXES = [
     "M S",
     "M.S.",
     "MR.",
+    "MR",
     "MS.",
     "MS",
+    "ETS",
+    "ETS.",
 ]
 
 # Legal/Jurisdiction Prefixes
@@ -42,4 +55,5 @@ ALL_PREFIXES      = TRADE_PREFIXES + BUSINESS_PREFIXES + LEGAL_PREFIXES
 
 
 def get_all_prefixes():
-    return ALL_PREFIXES
+    # Dynamically sort by string length descending to ensure longest matches first
+    return sorted(ALL_PREFIXES, key=len, reverse=True)

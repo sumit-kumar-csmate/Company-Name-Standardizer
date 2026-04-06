@@ -57,6 +57,19 @@ def _names_differ_only_by_andpvtltd(name1: str, name2: str) -> bool:
     return k1 == k2 and name1.upper() != name2.upper()
 
 
+def _anagrams_ignoring_andpvtltd(name1: str, name2: str) -> bool:
+    """
+    Return True if name1 and name2 contain exactly the same words 
+    (in any order) after ignoring 'AND', 'PRIVATE', 'LIMITED'.
+    Handles cases where word order differs AND a suffix word is missing.
+    """
+    if not name1 or not name2:
+        return False
+    w1 = {w for w in normalize_words_in_name(name1).upper().split() if w not in _REMOVABLE_SUBSTRINGS}
+    w2 = {w for w in normalize_words_in_name(name2).upper().split() if w not in _REMOVABLE_SUBSTRINGS}
+    return bool(w1) and w1 == w2
+
+
 def _names_differ_only_by_spaces(name1: str, name2: str) -> bool:
     """
     Return True if names are identical after removing all spaces
@@ -68,11 +81,12 @@ def _names_differ_only_by_spaces(name1: str, name2: str) -> bool:
             and name1.upper() != name2.upper())
 
 
-def can_merge(d1: dict, d2: dict):
+def can_merge(d1: dict, d2: dict, conflict_bases: set = None):
     """
     Returns (can_merge: bool, reason: str).
-    reason may include 'AND_PVT_LTD_ONLY' or 'SPACE_ONLY' as merge sub-reasons.
+    reason may include 'AND_PVT_LTD_ONLY', 'SPACE_ONLY', or 'MISSING_SUFFIX' as merge sub-reasons.
     """
+    conflict_bases = conflict_bases or set()
     f1, f2 = d1.get('legal_family'), d2.get('legal_family')
 
     # Rule 1: Legal families
@@ -80,12 +94,17 @@ def can_merge(d1: dict, d2: dict):
         if not suffixes_can_merge(f1, f2):
             return False, "Legal family mismatch"
     elif f1 or f2:
-        # Special: one has suffix, other doesn't — allowed if the "missing"
-        # suffix is accounted for by the AND/PVT/LTD word rule on the full name
-        c1 = d1.get('cleaned_upper', '')
-        c2 = d2.get('cleaned_upper', '')
-        if not _names_differ_only_by_andpvtltd(c1, c2):
-            return False, "Legal suffix presence mismatch"
+        # One has a suffix, other doesn't.
+        # Check global conflicts: if this base name is associated with multiple
+        # distinct suffixes across the dataset, we cannot safely merge the suffix-less version.
+        b1 = d1.get('base_name', '')
+        b2 = d2.get('base_name', '')
+        if (b1 and b1 in conflict_bases) or (b2 and b2 in conflict_bases):
+            return False, "Global suffix conflict blocks missing-suffix merge"
+        
+        # If no global conflict, we let it fall through to Rule 3 (base name check).
+        # This safely enables universal missing-suffix matching for ALL suffix types.
+        pass
 
     # Rule 2: Functional descriptors
     if not descriptors_allow_merge(d1.get('descriptors', set()), d2.get('descriptors', set())):
@@ -104,7 +123,7 @@ def can_merge(d1: dict, d2: dict):
             pass  # OK — continue to geography check
         else:
             # AND/PRIVATE/LIMITED difference on base names
-            if _names_differ_only_by_andpvtltd(b1, b2):
+            if _names_differ_only_by_andpvtltd(b1, b2) or _anagrams_ignoring_andpvtltd(b1, b2):
                 # Check geography before confirming
                 if not geography_allows_merge(d1.get('geography', set()), d2.get('geography', set())):
                     return False, "Geographic mismatch"
@@ -112,7 +131,7 @@ def can_merge(d1: dict, d2: dict):
             # Try full cleaned names (covers cases where suffix is part of AND/PVT/LTD words)
             c1 = d1.get('cleaned_upper', b1)
             c2 = d2.get('cleaned_upper', b2)
-            if _names_differ_only_by_andpvtltd(c1, c2):
+            if _names_differ_only_by_andpvtltd(c1, c2) or _anagrams_ignoring_andpvtltd(c1, c2):
                 if not geography_allows_merge(d1.get('geography', set()), d2.get('geography', set())):
                     return False, "Geographic mismatch"
                 return True, "AND_PVT_LTD_ONLY"
@@ -130,9 +149,26 @@ def build_merge_groups(name_data_list: list) -> list:
     Group mergeable names using Union-Find.
     Returns list of groups (each a list of indices).
     Each group dict includes the list of original indices and the merge_reason
-    that applies across the group (AND_PVT_LTD_ONLY takes precedence).
+    that applies across the group.
     """
-    n      = len(name_data_list)
+    n = len(name_data_list)
+    
+    # 1. Pre-scan for global suffix conflicts
+    base_to_families = {}
+    for d in name_data_list:
+        base = d.get('base_name')
+        if not base:
+            continue
+        fam = d.get('legal_family')
+        if fam:
+            base_to_families.setdefault(base, set()).add(fam)
+            
+    conflict_bases = set()
+    for base, families in base_to_families.items():
+        if len(families) > 1:
+            conflict_bases.add(base)
+
+    # 2. Union-Find merge
     parent = list(range(n))
     reason_map: dict = {}   # edge (i, j) → reason
 
@@ -155,7 +191,7 @@ def build_merge_groups(name_data_list: list) -> list:
 
     for i in range(n):
         for j in range(i + 1, n):
-            ok, reason = can_merge(name_data_list[i], name_data_list[j])
+            ok, reason = can_merge(name_data_list[i], name_data_list[j], conflict_bases)
             if ok:
                 union(i, j, reason)
 

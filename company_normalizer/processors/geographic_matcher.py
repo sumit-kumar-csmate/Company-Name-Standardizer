@@ -13,12 +13,12 @@ def extract_geography(name: str) -> set:
 def geography_allows_merge(geo1: set, geo2: set) -> bool:
     """
     Rules:
-    1. Neither has geography  → ALLOW
+    1. Neither has geography or one is empty → ALLOW
     2. Both have same geography → ALLOW
-    3. Otherwise → BLOCK
+    3. Different geographies → BLOCK
     """
-    if not geo1 and not geo2:
+    if not geo1 or not geo2:
         return True
-    if geo1 and geo2 and geo1 == geo2:
+    if geo1 == geo2:
         return True
     return False
