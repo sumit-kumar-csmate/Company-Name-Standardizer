@@ -41,8 +41,8 @@ PROTECTED_WORDS = frozenset({
     "GAS", "BUS", "MRS", "GS",  "MS",                   # Abbreviations / invariants
 
     # ── Country / geographic names ────────────────────────────────────────────
-    "PHILIPPINES", "MALDIVES", "NETHERLANDS", "HONDURAS",
-    "BAHAMAS", "BARBADOS", "BELIZE", "AMERICAS", "ANTILLES",
+    "PHILIPPINES", "MALDIVES", "HONDURAS",
+    "BAHAMAS", "BARBADOS", "BELIZE", "ANTILLES",
     "EMIRATES", "CANARIES",
 
     # ── Foreign words that end in 's' (Spanish / Portuguese / Indonesian) ────
@@ -235,6 +235,11 @@ ALLOWED_SINGULAR_MAP = {
     "LABORATORIAIS":    "LABORATORY",
     "INDUSTRIAS":       "INDUSTRY",
     "INDUSTRIAL":       "INDUSTRY",
+
+    #Countries
+    "Netherlands":       "Netherland",
+    "Nederlands":       "Netherland",
+    "Nederland":       "Netherland"
 }
 
 

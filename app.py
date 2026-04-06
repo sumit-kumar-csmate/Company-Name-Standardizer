@@ -105,12 +105,13 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
                 ai_candidates.add(cb)
     # ----------------------------------------------------
 
-    # Stage 4 — optional AI refinement
-    ai_map: dict = {}
-    ai_status: str = "Skipped (AI Disabled)"
+    # Stage 4 — ask AI to refine
+    idx_to_final_canon = idx_to_canon.copy()
+    ai_status = "Skipped (No API Key)"
+    
     if api_key and ai_candidates:
-        total_flags = len(ai_candidates)
-        progress_bar = st.progress(0, text=f"🤖 Init AI for {total_flags} names...")
+        st.info(f"🤖 Flagged {len(ai_candidates)} unique groups for AI verification...")
+        progress_bar = st.progress(0)
         
         def progress_callback(current, total, eta_seconds):
             pct = int((current / total) * 100) if total > 0 else 0
@@ -125,24 +126,31 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
         )
         progress_bar.empty()
             
-        # Re-normalise AI outputs through the FULL pipeline to ensure all rules are followed:
-        # address removal, prefix removal, unicode clean, text clean, suffix extraction, etc.
-        for raw_canon, ai_refined in raw_ai_map.items():
-            if ai_refined and ai_refined != raw_canon:
-                try:
-                    nd = process_single_name(ai_refined)
-                    # generate_canonical applies suffix formatting + plural normalization
-                    ai_map[raw_canon] = format_canonical_name(generate_canonical(nd))
-                except Exception:
-                    ai_map[raw_canon] = ai_refined
-            else:
-                # Even unchanged names go through the pipeline to catch any pre-existing issues
-                try:
-                    nd = process_single_name(ai_refined if ai_refined else raw_canon)
-                    ai_map[raw_canon] = format_canonical_name(generate_canonical(nd))
-                except Exception:
-                    ai_map[raw_canon] = ai_refined if ai_refined else raw_canon
-                    
+        # --- RE-GROUPING POST-AI ---
+        # 1. Apply AI fixes to their respective groups
+        post_ai_name_data = []
+        for i, nd in enumerate(name_data):
+            old_canon = idx_to_canon.get(i, "")
+            
+            # If the original canonical name was refined by AI, use it.
+            # If it wasn't returned by AI, or failed, fallback to old_canon.
+            ai_refined = raw_ai_map.get(old_canon, old_canon)
+            if not ai_refined:
+                ai_refined = old_canon
+                
+            post_ai_name_data.append(process_single_name(ai_refined))
+
+        # 2. Re-build merge partitions from scratch on the cleaned text
+        post_groups, post_base_to_families = build_merge_groups(post_ai_name_data)
+        
+        # 3. Determine final legal suffix & formatting
+        for group in post_groups:
+            indices = group['indices']
+            reason  = group['merge_reason']
+            final_canon = format_canonical_name(generate_canonical_for_group(post_ai_name_data, indices, reason, post_base_to_families))
+            for i in indices:
+                idx_to_final_canon[i] = final_canon
+
     elif api_key and not ai_candidates:
         ai_status = "Skipped (No flags found)"
         st.info("ℹ️ AI enabled, but no Medium/Low confidence names found.")
@@ -151,16 +159,18 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
     std_names, conf_scores, flags, ai_names, sources = [], [], [], [], []
 
     for i, nd in enumerate(name_data):
-        canon        = idx_to_canon.get(i, format_canonical_name(generate_canonical(nd)))
+        raw_canon    = idx_to_canon.get(i, format_canonical_name(generate_canonical(nd)))
+        final_canon  = idx_to_final_canon.get(i, raw_canon)
         merge_reason = idx_to_reason.get(i, "All rules align")
-        ai_can       = ai_map.get(canon, canon)
+        
+        # The confidence was generated purely off the ORIGINAL input vs original reason
         conf, flag   = calculate_confidence(nd, merge_reason)
 
-        std_names.append(ai_can)
+        std_names.append(final_canon)
         conf_scores.append(conf)
         flags.append(flag)
-        ai_names.append(ai_can if ai_can != canon else "")
-        sources.append("AI + RULE" if ai_can != canon else get_decision_source())
+        ai_names.append(final_canon if final_canon != raw_canon else "")
+        sources.append("AI + RULE" if final_canon != raw_canon else get_decision_source())
 
     # --- NEW SUBSET DETECTION LOGIC ---
     unique_std = list(set(std_names))

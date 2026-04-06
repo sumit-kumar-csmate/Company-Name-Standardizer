@@ -168,13 +168,17 @@ LEGAL_SUFFIX_MAP = {
     # ── DUTCH / BELGIUM ─────────────────────
     "NV":                    ("NV", NV_FAMILY),
     "N.V.":                  ("NV", NV_FAMILY),
+    "N V":                   ("NV", NV_FAMILY),
     "NAAMLOZE VENNOOTSCHAP": ("NV", NV_FAMILY),
     "BV":                    ("BV", "BV_FAMILY"),
+    "B.V.":                  ("BV", "BV_FAMILY"),
+    "B V":                   ("BV", "BV_FAMILY"),
     "BESLOTEN VENNOOTSCHAP": ("BV", "BV_FAMILY"),
 
     # ── JAPANESE ────────────────────────────
     "KK":               ("KK", KK_FAMILY),
     "K.K.":             ("KK", KK_FAMILY),
+    "K K":              ("KK", KK_FAMILY),
     "KABUSHIKI KAISHA": ("KK", KK_FAMILY),
 
     # ── NORDIC ──────────────────────────────
