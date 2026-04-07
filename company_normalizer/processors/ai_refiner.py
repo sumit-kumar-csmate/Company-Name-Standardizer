@@ -8,6 +8,7 @@ If ALL fail, every name maps to itself (safe no-op).
 """
 
 import time
+import difflib
 from openai import OpenAI
 
 # ── Model fallback chain — tried in order until one succeeds ─────────────────
@@ -15,6 +16,46 @@ from openai import OpenAI
 FALLBACK_MODELS = [
     "gemini-2.5-flash",
 ]
+
+def group_similar_names(names: list) -> list:
+    unique = list(dict.fromkeys(names))
+    unique.sort()
+    n = len(unique)
+    
+    # Use Union-Find for transitive grouping
+    parent = list(range(n))
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+        
+    def union(i, j):
+        root_i, root_j = find(i), find(j)
+        if root_i != root_j:
+            parent[root_j] = root_i
+
+    # Matrix comparison for 15-char 70% similarity
+    for i in range(n):
+        name1 = unique[i]
+        prefix1 = name1[:15].lower()
+        for j in range(i + 1, n):
+            name2 = unique[j]
+            prefix2 = name2[:15].lower()
+            
+            # Calculate 70% similarity on JUST the first 15 characters
+            similarity = difflib.SequenceMatcher(None, prefix1, prefix2).ratio()
+            if similarity >= 0.70:
+                union(i, j)
+                    
+    # Construct groups from roots
+    group_map = {}
+    for i in range(n):
+        root = find(i)
+        group_map.setdefault(root, []).append(unique[i])
+        
+    return list(group_map.values())
+
 
 _PROMPT = """You are a data-cleaning expert for international trade data.
 Fix spelling errors, standardise minor formatting, and strip extraneous branch data.
@@ -28,25 +69,40 @@ Rules:
 6. COMPOUND WORD PROTECTION: DO NOT expand or split compound science/industry words. For example, "Bio Chem" must stay "Bio Chem" — do NOT change it to "Biochemical". "Bio Energy" must stay "Bio Energy" — do NOT change it to "Bioenergy". Preserve the exact compound word tokens as-is.
 7. NO UNICODE/DIACRITICS: ALWAYS output using standard English alphabets (A-Z) only. Transliterate any unicode characters or diacritics (e.g., "Ö" -> "O", "ç" -> "c") into their standard ASCII Latin equivalents.
 8. Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, …).
-9. If the name is already perfect, return it unchanged.
-10. Output ONLY lines in the format:  Original|Refined   (one per input, no extra text).
+9. INTELLIGENT UNIFICATION & NOISE REMOVAL: The input is provided in groups of similar names. Examine each group carefully. If multiple names in a group represent the same company—even if they differ by NTN numbers, tax IDs, bank account details, partner names, addresses, or geographic locations—you MUST unify them to the exact same Refined name.
+    *   FORCEFUL DROP: If a company name is followed by a Bank Name (e.g., "... & Faysal Bank") or partner name, treat the secondary name as NOISE/PAYMENT details and DROP it to unify with the cleanest version of the primary company name.
+    *   ONLY keep them different if they are truly distinct business entities (e.g., Parent vs. Subsidiary with different legal suffixes).
+10. Output ONLY lines in the format:  N|Refined   where N is the input number (e.g. 1|Best Care Solutions). One line per input name, no extra text, no group headers.
 """
 
 
-def _try_one_batch(client: OpenAI, batch: list, model: str, timeout: int) -> str:
+def _try_one_batch(client: OpenAI, batch_groups: list, model: str, timeout: int) -> tuple:
     """
-    Send one batch to the API using the given model.
-    Returns the raw content string.
+    Send one batch of groups to the API using the given model.
+    Returns (raw_content_string, num_to_name dict).
     Raises on any error.
     """
-    prompt = _PROMPT + "\n\nInput List:\n" + "\n".join(batch)
+    num_to_name = {}   # position number → original name
+    input_lines = []
+    counter = 1
+    
+    for idx, group in enumerate(batch_groups, 1):
+        input_lines.append(f"Group {idx}:")
+        for name in group:
+            input_lines.append(f"{counter}. {name}")
+            num_to_name[counter] = name
+            counter += 1
+        input_lines.append("")
+        
+    prompt = _PROMPT + "\n\nInput List:\n" + "\n".join(input_lines)
     resp = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
         timeout=timeout,
     )
-    return resp.choices[0].message.content
+    content = resp.choices[0].message.content
+    return content, num_to_name
 
 
 def refine_company_names(names: list, api_key: str,
@@ -78,20 +134,41 @@ def refine_company_names(names: list, api_key: str,
     unique    = list(dict.fromkeys(names))
     total_uni = len(unique)
     result    = {}
-    BATCH     = 50
-    TIMEOUT   = 30  # seconds per request
+    BATCH     = 25
+    TIMEOUT   = 60  # seconds per request
     status    = "OK"
     working_model: str | None = None   # once a model works, reuse it
 
+    groups = group_similar_names(unique)
+    
+    # Build sub-batches of groups up to BATCH elements
+    batches_of_groups = []
+    current_batch = []
+    current_count = 0
+    for g in groups:
+        if current_count + len(g) > BATCH and current_batch:
+            batches_of_groups.append(current_batch)
+            current_batch = [g]
+            current_count = len(g)
+        else:
+            current_batch.append(g)
+            current_count += len(g)
+            
+    if current_batch:
+        batches_of_groups.append(current_batch)
+
     start_time = time.time()
-    for start in range(0, total_uni, BATCH):
+    processed_count = 0
+
+    for batch_groups in batches_of_groups:
+        batch_size = sum(len(g) for g in batch_groups)
+        
         if progress_callback:
             elapsed = time.time() - start_time
-            time_per_item = (elapsed / start) if start > 0 else 0.0
-            eta_seconds   = (total_uni - start) * time_per_item if start > 0 else 0.0
-            progress_callback(start, total_uni, eta_seconds)
+            time_per_item = (elapsed / processed_count) if processed_count > 0 else 0.0
+            eta_seconds   = (total_uni - processed_count) * time_per_item if processed_count > 0 else 0.0
+            progress_callback(processed_count, total_uni, eta_seconds)
 
-        batch = unique[start: start + BATCH]
         batch_ok = False
 
         # Try working_model first to avoid repeated fallback probing
@@ -100,13 +177,19 @@ def refine_company_names(names: list, api_key: str,
 
         for model in models_to_try:
             try:
-                print(f"[AI Refiner] Trying model: {model}  batch [{start}:{start+len(batch)}]")
-                content = _try_one_batch(client, batch, model, TIMEOUT)
+                print(f"[AI Refiner] Trying model: {model}  batch [{processed_count}:{processed_count+batch_size}]")
+                content, num_to_name = _try_one_batch(client, batch_groups, model, TIMEOUT)
 
+                # Parse N|Refined format — mapping by number, not by echoed text
                 for line in content.strip().splitlines():
                     parts = line.split("|")
                     if len(parts) >= 2:
-                        result[parts[0].strip()] = parts[1].strip()
+                        try:
+                            num = int(parts[0].strip().rstrip('.'))
+                            if num in num_to_name:
+                                result[num_to_name[num]] = parts[1].strip()
+                        except ValueError:
+                            pass  # skip malformed lines
 
                 working_model = model   # remember the model that worked
                 batch_ok = True
@@ -123,8 +206,9 @@ def refine_company_names(names: list, api_key: str,
                         f"Proxy Error: The AI proxy server is currently unavailable/offline ({err_msg[:30]}). "
                         "Please try again later or check your network."
                     )
-                    for n in batch:
-                        result[n] = n
+                    for g in batch_groups:
+                        for n in g:
+                            result[n] = n
                     batch_ok = True   # mark as handled (fallback applied)
                     break
                 elif "429" in err_msg:
@@ -137,10 +221,13 @@ def refine_company_names(names: list, api_key: str,
 
         if not batch_ok:
             # Exhausted all models for this batch
-            print(f"[AI Refiner] All models exhausted for batch [{start}:{start+len(batch)}]")
-            for n in batch:
-                result[n] = n
+            print(f"[AI Refiner] All models exhausted for batch [{processed_count}:{processed_count+batch_size}]")
+            for g in batch_groups:
+                for n in g:
+                    result[n] = n
             status = "All AI models failed. Names returned unchanged."
+            
+        processed_count += batch_size
 
     if progress_callback:
         progress_callback(total_uni, total_uni, 0.0)

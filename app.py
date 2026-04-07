@@ -57,7 +57,7 @@ def process_single_name(raw_name: str) -> dict:
     }
 
 
-def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
+def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, model_name: str = "gemini-2.5-flash"):
     # Stage 1 — per-name processing
     name_data = [process_single_name(str(row[company_col])) for _, row in df.iterrows()]
 
@@ -79,31 +79,34 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
             idx_to_canon[i]  = canon
             idx_to_reason[i] = merge_reason
             conf, _ = calculate_confidence(name_data[i], merge_reason)
-            if conf in ("Medium", "Low"):
-                ai_candidates.add(canon)
+    # --- STAGE 4: AI REFINEMENT (Intelligent Grouping) ---
+    # Prepare confidence scores for all rows
+    confidence_scores = []
+    for i in range(len(name_data)):
+        merge_reason = idx_to_reason.get(i, "None")
+        conf, _ = calculate_confidence(name_data[i], merge_reason)
+        confidence_scores.append(conf)
 
-    # --- NEAR-DUPLICATE DETECTION (≥90% similarity) ---
-    import difflib
-    # Build: canonical → list of row indices
-    canon_to_rows: dict = {}
-    for i, nd in enumerate(name_data):
-        c = idx_to_canon.get(i, "")
-        canon_to_rows.setdefault(c, []).append(i)
-
-    unique_canons = list(canon_to_rows.keys())
-    near_dup_canons: set = set()          # canonicals involved in near-duplicate pairs
-
-    for a in range(len(unique_canons)):
-        for b in range(a + 1, len(unique_canons)):
-            ca, cb = unique_canons[a], unique_canons[b]
-            ratio = difflib.SequenceMatcher(None, ca.lower(), cb.lower()).ratio()
-            if ratio >= 0.90:
-                near_dup_canons.add(ca)
-                near_dup_canons.add(cb)
-                # Send both groups to AI for spell-check / disambiguation
-                ai_candidates.add(ca)
-                ai_candidates.add(cb)
-    # ----------------------------------------------------
+    # Group ALL unique canonicals by similarity first
+    unique_canons = sorted(list(set(idx_to_canon.values())))
+    from company_normalizer.processors.ai_refiner import group_similar_names
+    all_groups = group_similar_names(unique_canons)
+    
+    # Determine which groups need AI (at least one member is Med/Low confidence)
+    ai_candidates = set()
+    for group in all_groups:
+        needs_ai = False
+        for canon_name in group:
+            # Find any row that matches this canonical name and check its confidence
+            for i, c in idx_to_canon.items():
+                if c == canon_name and confidence_scores[i] in ["Medium", "Low"]:
+                    needs_ai = True
+                    break
+            if needs_ai: break
+        
+        if needs_ai:
+            for canon_name in group:
+                ai_candidates.add(canon_name)
 
     # Stage 4 — ask AI to refine
     idx_to_final_canon = idx_to_canon.copy()
@@ -122,6 +125,7 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
         raw_ai_map, ai_status = refine_company_names(
             list(ai_candidates), 
             api_key, 
+            model_name=model_name,
             progress_callback=progress_callback
         )
         progress_bar.empty()
@@ -155,6 +159,7 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
         ai_status = "Skipped (No flags found)"
         st.info("ℹ️ AI enabled, but no Medium/Low confidence names found.")
 
+    near_dup_canons = set()  # Default empty set since new grouping handles duplicates
     # Stage 5 — build output columns
     std_names, conf_scores, flags, ai_names, sources = [], [], [], [], []
 
@@ -235,6 +240,13 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None):
 
     # Stage 6 — assemble result df (original column untouched)
     result = df.copy()
+    
+    # Remove existing generated columns to avoid insertion errors if re-processing an output file
+    cols_to_remove = ["Standardised Name", "Confidence Score", "Review Flag", "AI Verified Name", "Subset Highlight", "Near Dup Highlight"]
+    for col in cols_to_remove:
+        if col in result.columns:
+            result.drop(columns=[col], inplace=True)
+            
     col_pos = result.columns.get_loc(company_col) + 1
     result.insert(col_pos, "Standardised Name", std_names)
     result["Confidence Score"] = conf_scores
@@ -323,14 +335,17 @@ def main():
     with st.sidebar:
         st.markdown("## ⚙️ Settings")
 
-        st.markdown("### 🤖 AI Verification")
-        st.caption("Model: **gemini-2.5-flash** (via Custom Proxy)")
-        api_key = os.environ.get("OPENAI_API_KEY", "")
-        
         if api_key:
             enable_ai = st.checkbox("Enable AI Refinement", value=True)
+            model_to_use = st.selectbox(
+                "Select Model",
+                ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
+                index=0,
+                help="Choose the model for name verification. 2.5/2.0 are recommended for speed."
+            )
         else:
             enable_ai = st.checkbox("Enable AI Refinement", value=False, disabled=True)
+            model_to_use = "gemini-2.5-flash"
             st.warning("No API key found. Add OPENAI_API_KEY to your .env file to enable AI.")
 
         st.divider()
@@ -402,7 +417,7 @@ def main():
         key_to_use = api_key if (enable_ai and api_key) else None
         with st.spinner("Processing …"):
             try:
-                result_df, total, n_groups, ai_status, near_dup_canons = process_dataframe(df, company_col, api_key=key_to_use)
+                result_df, total, n_groups, ai_status, near_dup_canons = process_dataframe(df, company_col, api_key=key_to_use, model_name=model_to_use)
             except Exception as e:
                 st.error(f"Processing error: {e}"); st.exception(e); return
 
