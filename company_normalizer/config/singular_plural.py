@@ -89,6 +89,7 @@ ALLOWED_SINGULAR_MAP = {
     "ADDITIVES":        "ADDITIVE",
     "ADHESIVES":        "ADHESIVE",
     "ADSORBENTS":       "ADSORBENT",
+    "LIFESCIENCES":     "LIFESCIENCE",
     "AMINES":           "AMINE",
     "AROMATICS":        "AROMATIC",
     "CAPSULES":         "CAPSULE",
