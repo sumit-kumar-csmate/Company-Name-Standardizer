@@ -1,5 +1,5 @@
 """
-Company Name Normalization Tool v2.0
+Company Name Normalization Tool v2.1
 Streamlit Web Application
 
 VLOOKUP-Friendly Design:
@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -108,6 +109,13 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
             for canon_name in group:
                 ai_candidates.add(canon_name)
 
+    # Populate near_dup_canons for visual highlighting in the UI (Tiffany Blue)
+    near_dup_canons = set()
+    for group in all_groups:
+        if len(group) > 1:
+            for name in group:
+                near_dup_canons.add(name)
+
     # Stage 4 — ask AI to refine
     idx_to_final_canon = idx_to_canon.copy()
     ai_status = "Skipped (No API Key)"
@@ -159,7 +167,6 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
         ai_status = "Skipped (No flags found)"
         st.info("ℹ️ AI enabled, but no Medium/Low confidence names found.")
 
-    near_dup_canons = set()  # Default empty set since new grouping handles duplicates
     # Stage 5 — build output columns
     std_names, conf_scores, flags, ai_names, sources = [], [], [], [], []
 
@@ -272,7 +279,7 @@ def to_excel(styled_obj) -> bytes:
 
 def main():
     st.set_page_config(
-        page_title="Company Name Normalizer v2.0",
+        page_title="Company Name Normalizer v2.1",
         page_icon="🏢",
         layout="wide",
     )
@@ -326,7 +333,7 @@ def main():
     # ── Hero ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="hero">
-      <h1>🏢 Company Name Normalizer <span>v2.0</span></h1>
+      <h1>🏢 Company Name Normalizer <span>v2.1</span></h1>
       <p>International Trade Data · Rule-Based Standardisation · VLOOKUP-Ready Output</p>
     </div>
     """, unsafe_allow_html=True)
@@ -361,8 +368,9 @@ def main():
 7. **Word-order normalisation** (jumbled names merged)
 8. Singular ↔ Plural (Chemical ↔ Chemicals …)
 9. Merge identical base names → one canonical name
-10. Confidence scoring + Review flags
-11. *(optional)* AI spell-check on flagged names
+10. **Intelligent AI Grouping** (15-char / 70% similarity transitive clusters)
+11. **Firm Unification** (Unified output for similar groups)
+12. **Aggressive Noise Removal** (Strip NTNs, Bank Details, Branches)
         """)
 
         st.divider()
@@ -511,15 +519,20 @@ def main():
         export_df = result_df.drop(columns=["Subset Highlight", "Near Dup Highlight"])
         export_styled = export_df.style.apply(highlight_rows, axis=None)
 
-        d1.download_button("📥 CSV",
-            export_df.to_csv(index=False).encode("utf-8"),
-            f"normalised_{stem}.csv", "text/csv",
-            use_container_width=True)
-        d2.download_button("📥 Excel",
-            to_excel(export_styled),
-            f"normalised_{stem}.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True)
+        d1.download_button(
+            label="📥 CSV",
+            data=export_df.to_csv(index=False).encode("utf-8"),
+            file_name=f"normalised_{stem}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        d2.download_button(
+            label="📥 Excel",
+            data=to_excel(export_styled),
+            file_name=f"normalised_{stem}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
 
         st.markdown(
             '<div class="tip">💡 <strong>VLOOKUP Tip:</strong> The '

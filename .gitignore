@@ -2,3 +2,15 @@
 venv/
 __pycache__/
 *.pyc
+
+# Build outputs
+build/
+dist/
+*.spec
+*.zip
+
+# Data and test logs
+*.xlsx
+*.csv
+*.txt
+!requirements.txt
