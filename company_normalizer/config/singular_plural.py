@@ -162,6 +162,8 @@ ALLOWED_SINGULAR_MAP = {
     "TOILETRIES":       "TOILETRY",
     # ── Business / Industry descriptors ──────────────────────────────────────
     "ENTERPRISES":      "ENTERPRISE",
+    "SOLUTIONS":        "SOLUTION",
+    "SERVICES":         "SERVICE",
     "ACCESSORIES":      "ACCESSORY",
     "ACHIEVERS":        "ACHIEVER",
     "AGENCIES":         "AGENCY",
