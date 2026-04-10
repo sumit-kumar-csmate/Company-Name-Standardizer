@@ -128,9 +128,9 @@ def _elect_primary(name_data_list: list, group_indices: list) -> int:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
-def _merge_andpvtltd_words(names_upper: list) -> set:
-    """Collect all AND/PRIVATE/LIMITED words present across any name in group."""
-    special = {"AND", "PRIVATE", "LIMITED"}
+def _merge_missing_conjunctions(names_upper: list) -> set:
+    """Collect all AND/CO words present across any name in group's base_name."""
+    special = {"AND", "CO"}
     found = set()
     for n in names_upper:
         for w in n.split():
@@ -180,39 +180,36 @@ def generate_canonical_for_group(name_data_list: list, group_indices: list,
     # ── AND/PVT/LTD merge canonical ──────────────────────────────────────────
     if merge_reason == "AND_PVT_LTD_ONLY":
         longest_idx = max(group_indices,
-                          key=lambda i: len(name_data_list[i].get('cleaned_upper', '')))
+                          key=lambda i: len(name_data_list[i].get('base_name', '')))
         best        = name_data_list[longest_idx]
-        canon       = best.get('cleaned_upper', '')
+        canon       = best.get('base_name', '')
 
-        all_cleaned = [name_data_list[i].get('cleaned_upper', '') for i in group_indices]
-        needed      = _merge_andpvtltd_words(all_cleaned)
+        all_bases = [name_data_list[i].get('base_name', '') for i in group_indices]
+        needed      = _merge_missing_conjunctions(all_bases)
         present     = set(w for w in canon.split() if w in needed)
         missing     = needed - present
 
         words = canon.split()
         for mw in sorted(missing):
-            if mw == "AND":
+            if mw in ["AND", "CO"]:
                 inserted = False
-                for c_name in all_cleaned:
-                    w_parts = c_name.split()
-                    if "AND" in w_parts:
-                        and_idx = w_parts.index("AND")
-                        if and_idx > 0:
-                            prev_w = w_parts[and_idx - 1]
+                for b_name in all_bases:
+                    w_parts = b_name.split()
+                    if mw in w_parts:
+                        mw_idx = w_parts.index(mw)
+                        if mw_idx > 0:
+                            prev_w = w_parts[mw_idx - 1]
                             if prev_w in words:
-                                words.insert(words.index(prev_w) + 1, "AND")
+                                words.insert(words.index(prev_w) + 1, mw)
                                 inserted = True
                                 break
                 if not inserted:
-                    if len(words) >= 2:
+                    if mw == "AND" and len(words) >= 2:
                         words.insert(1, "AND")
                     else:
-                        words.append("AND")
-            else:
-                words.append(mw)
+                        words.append(mw)
 
         norm = normalize_words_in_name(' '.join(words)).strip()
-        # Ensure we still apply the suffix!
         primary['base_name'] = norm
 
     # ── Standard Suffix Forcing ──────────────────────────────────────────────

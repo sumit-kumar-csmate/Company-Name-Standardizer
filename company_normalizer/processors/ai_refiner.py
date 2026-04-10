@@ -35,17 +35,33 @@ def group_similar_names(names: list) -> list:
         if root_i != root_j:
             parent[root_j] = root_i
 
-    # Matrix comparison for 15-char 70% similarity
+    from company_normalizer.processors.legal_suffix_normalizer import extract_and_normalize_suffix
+
+    # Matrix comparison
     for i in range(n):
         name1 = unique[i]
         prefix1 = name1[:15].lower()
+        _, _, fam1 = extract_and_normalize_suffix(name1)
+        
         for j in range(i + 1, n):
             name2 = unique[j]
             prefix2 = name2[:15].lower()
+            _, _, fam2 = extract_and_normalize_suffix(name2)
             
-            # Calculate 70% similarity on JUST the first 15 characters
+            # DO NOT group if they have distinct known legal families
+            if fam1 and fam2 and fam1 != fam2:
+                continue
+
+            # Check if name is entirely contained in the other name (subset) like EXCLISIVE vs EXCLUSIVE
+            # To catch spelling typos more generously, we should also check similarity on the full string if prefix matches.
+            # But wait, original logic was just checking prefix. 
             similarity = difflib.SequenceMatcher(None, prefix1, prefix2).ratio()
-            if similarity >= 0.70:
+            
+            # If they are very similar overall, or prefix is extremely similar
+            # Also calculate full similarity to catch typos in middle/end of name.
+            full_similarity = difflib.SequenceMatcher(None, name1.lower(), name2.lower()).ratio()
+            
+            if similarity >= 0.70 or full_similarity >= 0.85:
                 union(i, j)
                     
     # Construct groups from roots
