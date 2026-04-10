@@ -34,6 +34,12 @@ from company_normalizer.core.canonical_generator           import (
 from company_normalizer.core.confidence_scorer             import calculate_confidence, get_decision_source
 from company_normalizer.processors.ai_refiner              import refine_company_names
 from company_normalizer.processors.manual_corrector        import apply_manual_corrections
+from company_normalizer.io.history_manager                 import (
+    save_to_history, load_history_index, get_history_file_path, purge_old_records
+)
+
+# Purge records older than 30 days once at startup
+purge_old_records()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -386,6 +392,39 @@ def main():
 | AI Verified Name | AI-corrected (if enabled) |
         """)
 
+        # ── Processing History ────────────────────────────────────────────────
+        st.divider()
+        st.markdown("### 📂 Processing History")
+        history_records = load_history_index()
+        if not history_records:
+            st.caption("No history yet. Process a file to start tracking.")
+        else:
+            st.caption(f"{len(history_records)} record(s) · kept for 30 days")
+            for rec in history_records:
+                ts_display = rec.get("timestamp", "").replace("T", "  ")
+                orig       = rec.get("original_name", "file")
+                rows       = rec.get("row_count", "?")
+                fname      = rec.get("filename", "")
+                fpath      = get_history_file_path(fname)
+                with st.expander(f"🕒 {ts_display}", expanded=False):
+                    st.markdown(
+                        f"**File:** {orig}  \n"
+                        f"**Rows processed:** {rows:,}" if isinstance(rows, int)
+                        else f"**File:** {orig}  \n**Rows processed:** {rows}"
+                    )
+                    if os.path.exists(fpath):
+                        with open(fpath, "rb") as hf:
+                            st.download_button(
+                                label="📥 Download",
+                                data=hf.read(),
+                                file_name=fname,
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                key=f"hist_{fname}",
+                                use_container_width=True,
+                            )
+                    else:
+                        st.warning("File missing from disk.")
+
     # ── File Upload ───────────────────────────────────────────────────────────
     st.markdown("## 📁 Upload File")
     st.markdown(
@@ -520,6 +559,13 @@ def main():
         # Prepare components for download
         export_df = result_df.drop(columns=["Subset Highlight", "Near Dup Highlight"])
         export_styled = export_df.style.apply(highlight_rows, axis=None)
+        excel_bytes = to_excel(export_styled)
+
+        # ── Auto-save to history ─────────────────────────────────────────────
+        try:
+            save_to_history(excel_bytes, uploaded.name, total)
+        except Exception as _he:
+            pass   # history save is best-effort; never block the user
 
         d1.download_button(
             label="📥 CSV",
@@ -530,7 +576,7 @@ def main():
         )
         d2.download_button(
             label="📥 Excel",
-            data=to_excel(export_styled),
+            data=excel_bytes,
             file_name=f"normalised_{stem}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True
