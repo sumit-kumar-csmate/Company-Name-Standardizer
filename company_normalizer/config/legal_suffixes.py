@@ -120,33 +120,33 @@ LEGAL_SUFFIX_MAP = {
 
     # ── TURKISH ──────────────────────────────────────────────────────────────
     # -- Legal forms (standalone)
-    "AS":                            ("AS",      TURKISH_FAMILY),  # Anonim Sirketi
-    "A.S.":                          ("AS",      TURKISH_FAMILY),
-    "A S":                           ("AS",      TURKISH_FAMILY),
-    "ANONIM SIRKETI":                ("AS",      TURKISH_FAMILY),
-    "LTD STI":                       ("LTD STI", TURKISH_FAMILY),  # Limited Sirketi
-    "LIMITED STI":                   ("LTD STI", TURKISH_FAMILY),
-    "LTD. STI.":                     ("LTD STI", TURKISH_FAMILY),
+    "AS":                            ("AS",      "AS_FAMILY"),  # Anonim Sirketi
+    "A.S.":                          ("AS",      "AS_FAMILY"),
+    "A S":                           ("AS",      "AS_FAMILY"),
+    "ANONIM SIRKETI":                ("AS",      "AS_FAMILY"),
+    "LTD STI":                       ("LTD STI", "LTD_STI_FAMILY"),  # Limited Sirketi
+    "LIMITED STI":                   ("LTD STI", "LTD_STI_FAMILY"),
+    "LTD. STI.":                     ("LTD STI", "LTD_STI_FAMILY"),
     # -- Business descriptors that appear as trailing suffixes
-    "SANAYI VE":                     ("AS",      TURKISH_FAMILY),
-    "SAN VE":                        ("AS",      TURKISH_FAMILY),
-    "SAN TIC":                       ("AS",      TURKISH_FAMILY),
-    "SAN. TIC.":                     ("AS",      TURKISH_FAMILY),
-    "SAN TIC VE":                    ("AS",      TURKISH_FAMILY),
-    "SANAYI TICARET":                ("AS",      TURKISH_FAMILY),
-    "SANAYI VE TICARET":             ("AS",      TURKISH_FAMILY),
-    "SANAYI VE TIC":                 ("AS",      TURKISH_FAMILY),
+    "SANAYI VE":                     ("AS",      "AS_FAMILY"),
+    "SAN VE":                        ("AS",      "AS_FAMILY"),
+    "SAN TIC":                       ("AS",      "AS_FAMILY"),
+    "SAN. TIC.":                     ("AS",      "AS_FAMILY"),
+    "SAN TIC VE":                    ("AS",      "AS_FAMILY"),
+    "SANAYI TICARET":                ("AS",      "AS_FAMILY"),
+    "SANAYI VE TICARET":             ("AS",      "AS_FAMILY"),
+    "SANAYI VE TIC":                 ("AS",      "AS_FAMILY"),
     # -- Compound: descriptor + AS
-    "SAN TIC AS":                    ("AS",      TURKISH_FAMILY),
-    "SAN VE TIC AS":                 ("AS",      TURKISH_FAMILY),
-    "SANAYI VE TICARET AS":          ("AS",      TURKISH_FAMILY),
-    "SANAYI VE TIC AS":              ("AS",      TURKISH_FAMILY),
-    "SAN VE TICARET AS":             ("AS",      TURKISH_FAMILY),
+    "SAN TIC AS":                    ("AS",      "AS_FAMILY"),
+    "SAN VE TIC AS":                 ("AS",      "AS_FAMILY"),
+    "SANAYI VE TICARET AS":          ("AS",      "AS_FAMILY"),
+    "SANAYI VE TIC AS":              ("AS",      "AS_FAMILY"),
+    "SAN VE TICARET AS":             ("AS",      "AS_FAMILY"),
     # -- Compound: descriptor + LTD STI
-    "SAN TIC LTD STI":               ("LTD STI", TURKISH_FAMILY),
-    "SAN VE TIC LTD STI":            ("LTD STI", TURKISH_FAMILY),
-    "SANAYI VE TICARET LTD STI":     ("LTD STI", TURKISH_FAMILY),
-    "SANAYI VE TIC LTD STI":         ("LTD STI", TURKISH_FAMILY),
+    "SAN TIC LTD STI":               ("LTD STI", "LTD_STI_FAMILY"),
+    "SAN VE TIC LTD STI":            ("LTD STI", "LTD_STI_FAMILY"),
+    "SANAYI VE TICARET LTD STI":     ("LTD STI", "LTD_STI_FAMILY"),
+    "SANAYI VE TIC LTD STI":         ("LTD STI", "LTD_STI_FAMILY"),
 
     # ── PERUVIAN (SAC) ──────────────────────
     "SAC":                ("SAC", SAC_FAMILY),

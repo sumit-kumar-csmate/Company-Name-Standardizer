@@ -25,6 +25,8 @@ from company_normalizer.processors.word_order_normalizer    import names_are_wor
 
 # Words removed as substrings when computing the "core key" for matching
 _REMOVABLE_SUBSTRINGS = ['PRIVATE', 'LIMITED', 'AND']
+# Words removed only as whole words (to prevent 'CO' from stripping from 'COFCO')
+_REMOVABLE_WHOLE_WORDS = ['CO']
 
 
 def _core_key(name: str) -> str:
@@ -32,11 +34,15 @@ def _core_key(name: str) -> str:
     Core comparison key:
       1. Normalize singular/plural words
       2. Uppercase
-      3. Remove all spaces
-      4. Strip PRIVATE / LIMITED / AND as substrings (handles both whole-word
+      3. Remove whole words like 'CO' safely
+      4. Remove all spaces
+      5. Strip PRIVATE / LIMITED / AND as substrings (handles both whole-word
          and embedded cases, e.g. 'Salesprivate' → core same as 'Sales Private')
     """
-    s = normalize_words_in_name(name).upper().replace(' ', '')
+    s = normalize_words_in_name(name).upper()
+    words = [w for w in s.split() if w not in _REMOVABLE_WHOLE_WORDS]
+    s = "".join(words)
+    
     for w in _REMOVABLE_SUBSTRINGS:
         s = s.replace(w, '')
     return s
@@ -45,7 +51,7 @@ def _core_key(name: str) -> str:
 def _names_differ_only_by_andpvtltd(name1: str, name2: str) -> bool:
     """
     Return True if name1 and name2 share the same core after removing
-    AND / PRIVATE / LIMITED (including when embedded, e.g. 'Salesprivate')
+    AND / PRIVATE / LIMITED / CO (including when embedded, e.g. 'Salesprivate')
     and all spaces.  The names must not already be identical.
     """
     if not name1 or not name2:
@@ -60,13 +66,14 @@ def _names_differ_only_by_andpvtltd(name1: str, name2: str) -> bool:
 def _anagrams_ignoring_andpvtltd(name1: str, name2: str) -> bool:
     """
     Return True if name1 and name2 contain exactly the same words 
-    (in any order) after ignoring 'AND', 'PRIVATE', 'LIMITED'.
+    (in any order) after ignoring 'AND', 'PRIVATE', 'LIMITED', 'CO'.
     Handles cases where word order differs AND a suffix word is missing.
     """
     if not name1 or not name2:
         return False
-    w1 = {w for w in normalize_words_in_name(name1).upper().split() if w not in _REMOVABLE_SUBSTRINGS}
-    w2 = {w for w in normalize_words_in_name(name2).upper().split() if w not in _REMOVABLE_SUBSTRINGS}
+    skip = set(_REMOVABLE_SUBSTRINGS + _REMOVABLE_WHOLE_WORDS)
+    w1 = {w for w in normalize_words_in_name(name1).upper().split() if w not in skip}
+    w2 = {w for w in normalize_words_in_name(name2).upper().split() if w not in skip}
     return bool(w1) and w1 == w2
 
 
