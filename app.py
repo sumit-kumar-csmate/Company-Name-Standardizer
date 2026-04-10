@@ -33,6 +33,7 @@ from company_normalizer.core.canonical_generator           import (
 )
 from company_normalizer.core.confidence_scorer             import calculate_confidence, get_decision_source
 from company_normalizer.processors.ai_refiner              import refine_company_names
+from company_normalizer.processors.manual_corrector        import apply_manual_corrections
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ from company_normalizer.processors.ai_refiner              import refine_company
 # ─────────────────────────────────────────────────────────────────────────────
 
 def process_single_name(raw_name: str) -> dict:
+    raw_name = apply_manual_corrections(str(raw_name))   # Step 0: manual corrections
     cleaned_display, cleaned_upper = clean_text(raw_name)
     no_address,  removed_address   = remove_address_details(cleaned_upper)
     no_prefix,   removed_prefixes  = remove_prefixes(no_address)

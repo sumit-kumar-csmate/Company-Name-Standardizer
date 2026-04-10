@@ -70,7 +70,7 @@ ABBREVIATION_MAP = [
 # Characters replaced with 4 spaces in Step 1
 # Includes dot (.) — all these are expanded to 4 spaces so abbreviation
 # expansion in Step 3 can still match whole-word patterns cleanly.
-_SPECIAL_CHARS_RE = re.compile(r'[&/,;:\'"()\[\]!?_\\@#*~`|<>{}=+\-.]')
+_SPECIAL_CHARS_RE = re.compile(r'[&/,;:\'"()\[\]!?_\\@#*~`|<>{}=+\-.\u201C\u201D\u2018\u2019\u02B9]')
 
 
 _UNICODE_MAP = str.maketrans(

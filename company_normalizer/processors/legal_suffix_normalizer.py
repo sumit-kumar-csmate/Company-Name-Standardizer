@@ -24,6 +24,12 @@ def extract_and_normalize_suffix(name: str):
         if name_up[-(slen + 1)] == ' ':
             base             = name[:-(slen + 1)].strip()
             canon, family_id = _cfg_normalize(suffix)
+            # Malaysia-only rule: replace "Malaysia/Malaysian" before a suffix with "M"
+            # e.g. "Apical Malaysia Sdn Bhd" → "Apical M Sdn Bhd"
+            base_words = base.split()
+            if base_words and base_words[-1].upper() in ("MALAYSIA", "MALAYSIAN"):
+                base_words[-1] = "M"
+            base = ' '.join(base_words).strip() or base
             return base, canon, family_id
 
     return name, "", None

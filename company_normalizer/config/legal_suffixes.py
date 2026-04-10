@@ -12,7 +12,8 @@ MEXICAN_LEGAL_FAMILY   = "MEXICAN_LEGAL_FAMILY"
 CV_FAMILY              = "CV_FAMILY"
 
 SLU_FAMILY             = "SLU_FAMILY"
-LTD_STI_FAMILY         = "LTD_STI_FAMILY"
+LTD_STI_FAMILY         = "TURKISH_FAMILY"   # kept for backward compatibility
+TURKISH_FAMILY         = "TURKISH_FAMILY"
 SAC_FAMILY             = "SAC_FAMILY"
 
 SAICA_FAMILY           = "SAICA_FAMILY"
@@ -39,6 +40,8 @@ AG_FAMILY              = "AG_FAMILY"
 AB_FAMILY              = "AB_FAMILY"
 OY_FAMILY              = "OY_FAMILY"
 JSC_FAMILY             = "JSC_FAMILY"
+DP_FAMILY              = "DP_FAMILY"
+SAL_FAMILY             = "SAL_FAMILY"
 
 LEGAL_SUFFIX_MAP = {
     # ── PRIVATE / LIMITED ───────────────────
@@ -115,9 +118,35 @@ LEGAL_SUFFIX_MAP = {
     "S L U":              ("SLU", SLU_FAMILY),
     "S.L.U.":             ("SLU", SLU_FAMILY),
 
-    # ── TURKISH (LTD STI) ───────────────────
-    "LTD STI":            ("LTD STI", LTD_STI_FAMILY),
-    "LIMITED STI":        ("LTD STI", LTD_STI_FAMILY),
+    # ── TURKISH ──────────────────────────────────────────────────────────────
+    # -- Legal forms (standalone)
+    "AS":                            ("AS",      TURKISH_FAMILY),  # Anonim Sirketi
+    "A.S.":                          ("AS",      TURKISH_FAMILY),
+    "A S":                           ("AS",      TURKISH_FAMILY),
+    "ANONIM SIRKETI":                ("AS",      TURKISH_FAMILY),
+    "LTD STI":                       ("LTD STI", TURKISH_FAMILY),  # Limited Sirketi
+    "LIMITED STI":                   ("LTD STI", TURKISH_FAMILY),
+    "LTD. STI.":                     ("LTD STI", TURKISH_FAMILY),
+    # -- Business descriptors that appear as trailing suffixes
+    "SANAYI VE":                     ("AS",      TURKISH_FAMILY),
+    "SAN VE":                        ("AS",      TURKISH_FAMILY),
+    "SAN TIC":                       ("AS",      TURKISH_FAMILY),
+    "SAN. TIC.":                     ("AS",      TURKISH_FAMILY),
+    "SAN TIC VE":                    ("AS",      TURKISH_FAMILY),
+    "SANAYI TICARET":                ("AS",      TURKISH_FAMILY),
+    "SANAYI VE TICARET":             ("AS",      TURKISH_FAMILY),
+    "SANAYI VE TIC":                 ("AS",      TURKISH_FAMILY),
+    # -- Compound: descriptor + AS
+    "SAN TIC AS":                    ("AS",      TURKISH_FAMILY),
+    "SAN VE TIC AS":                 ("AS",      TURKISH_FAMILY),
+    "SANAYI VE TICARET AS":          ("AS",      TURKISH_FAMILY),
+    "SANAYI VE TIC AS":              ("AS",      TURKISH_FAMILY),
+    "SAN VE TICARET AS":             ("AS",      TURKISH_FAMILY),
+    # -- Compound: descriptor + LTD STI
+    "SAN TIC LTD STI":               ("LTD STI", TURKISH_FAMILY),
+    "SAN VE TIC LTD STI":            ("LTD STI", TURKISH_FAMILY),
+    "SANAYI VE TICARET LTD STI":     ("LTD STI", TURKISH_FAMILY),
+    "SANAYI VE TIC LTD STI":         ("LTD STI", TURKISH_FAMILY),
 
     # ── PERUVIAN (SAC) ──────────────────────
     "SAC":                ("SAC", SAC_FAMILY),
@@ -244,6 +273,17 @@ LEGAL_SUFFIX_MAP = {
     "SMC":                           ("SMC", SMC_FAMILY),
     "SINGLE MEMBER COMPANY":         ("SMC", SMC_FAMILY),
     "SINGLE MEMBER CO":              ("SMC", SMC_FAMILY),
+
+    # ── VIETNAMESE ──────────────────────────
+    "DP":                            ("DP", DP_FAMILY),    # Doanh Nghiep (Enterprise)
+    "DOANH NGHIEP":                  ("DP", DP_FAMILY),
+
+    # ── LEBANESE ───────────────────────────
+    "SAL":                           ("SAL", SAL_FAMILY),  # Societe Anonyme Libanaise
+    "SOCIETE ANONYME LIBANAISE":     ("SAL", SAL_FAMILY),
+    "SOCIÉTÉ ANONYME LIBANAISE":     ("SAL", SAL_FAMILY),
+    "S.A.L.":                        ("SAL", SAL_FAMILY),
+    "S A L":                         ("SAL", SAL_FAMILY),
 }
 
 # Normalise all keys to UPPERCASE

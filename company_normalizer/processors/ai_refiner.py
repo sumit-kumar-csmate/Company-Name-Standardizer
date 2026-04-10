@@ -72,7 +72,8 @@ Rules:
 9. INTELLIGENT UNIFICATION & NOISE REMOVAL: The input is provided in groups of similar names. Examine each group carefully. If multiple names in a group represent the same company—even if they differ by NTN numbers, tax IDs, bank account details, partner names, addresses, or geographic locations—you MUST unify them to the exact same Refined name.
     *   FORCEFUL DROP: If a company name is followed by a Bank Name (e.g., "... & Faysal Bank") or partner name, treat the secondary name as NOISE/PAYMENT details and DROP it to unify with the cleanest version of the primary company name.
     *   ONLY keep them different if they are truly distinct business entities (e.g., Parent vs. Subsidiary with different legal suffixes).
-10. Output ONLY lines in the format:  N|Refined   where N is the input number (e.g. 1|Best Care Solutions). One line per input name, no extra text, no group headers.
+10. TYPO UNIFICATION (CRITICAL): Within each group, if two or more names differ by only 1–2 characters (such as a transposed pair of letters, a substituted letter, a missing letter, or an extra letter), treat them as spelling variants of the same company and unify ALL of them to ONE single authoritative spelling. To choose the correct spelling: prefer the version that appears most frequently in the group, or the one that most closely matches a plausible real-world registered company name. Every entry in the group MUST output that exact same Refined name — never leave two near-identical spellings as separate outputs within the same group.
+11. Output ONLY lines in the format:  N|Refined   where N is the input number (e.g. 1|Best Care Solutions). One line per input name, no extra text, no group headers.
 """
 
 
