@@ -106,10 +106,6 @@ def clean_text(raw_name: str):
     # ── STEP 0a: Unicode Transliteration ────────────────────────────────────
     text = text.translate(_UNICODE_MAP)
 
-    # ── STEP 0b: Alias Stripping ────────────────────────────────────────────
-    # Strip "Trading As" (T/A, T A) or "Doing Business As" (DBA) if they appear
-    # AFTER the start of the company name (requires preceding whitespace)
-    text = re.sub(r'(?i)\s+\b(?:T/A|T\.?A\.?|D/B/A|DBA|TRADING AS|DOING BUSINESS AS)\b.*', '', text)
 
     # ── STEP 0b: Normalise hyphenated compound words ──────────────────────
     # Collapse "BIO-CHEM" -> "BIOCHEM", "BIO-ENERGY" -> "BIOENERGY" etc.
