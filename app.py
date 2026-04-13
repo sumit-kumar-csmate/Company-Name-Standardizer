@@ -101,17 +101,22 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
     from company_normalizer.processors.ai_refiner import group_similar_names
     all_groups = group_similar_names(unique_canons)
     
-    # Determine which groups need AI (at least one member is Med/Low confidence)
+    # Determine which groups need AI (Med/Low confidence OR near-duplicate conflict)
     ai_candidates = set()
     for group in all_groups:
         needs_ai = False
-        for canon_name in group:
-            # Find any row that matches this canonical name and check its confidence
-            for i, c in idx_to_canon.items():
-                if c == canon_name and confidence_scores[i] in ["Medium", "Low"]:
-                    needs_ai = True
-                    break
-            if needs_ai: break
+        
+        # If there are variations in the group (typo cluster), it ALWAYS needs AI
+        if len(group) > 1:
+            needs_ai = True
+        else:
+            for canon_name in group:
+                # Find any row that matches this canonical name and check its confidence
+                for i, c in idx_to_canon.items():
+                    if c == canon_name and confidence_scores[i] in ["Medium", "Low"]:
+                        needs_ai = True
+                        break
+                if needs_ai: break
         
         if needs_ai:
             for canon_name in group:
@@ -354,7 +359,7 @@ def main():
             enable_ai = st.checkbox("Enable AI Refinement", value=True)
             model_to_use = st.selectbox(
                 "Select Model",
-                ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
+                ["gemini-2.5-flash", "gemini-3.1-pro-preview"],
                 index=0,
                 help="Choose the model for name verification. 2.5/2.0 are recommended for speed."
             )
