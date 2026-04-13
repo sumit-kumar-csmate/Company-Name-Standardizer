@@ -77,7 +77,7 @@ _PROMPT = """You are a data-cleaning expert for international trade data.
 Fix spelling errors, standardise minor formatting, and strip extraneous branch data.
 
 Rules:
-1. SPELLING & DIALECT ALIGNMENT: Fix typos (e.g. "Limted" → "Limited"). Unify dialects and standard trade abbreviations (e.g., "Tyre" → "Tire", "Impex" → "Import And Export", "Intl" → "International").
+1. SPELLING & DIALECT ALIGNMENT: Fix typos (e.g. "Limted" → "Limited"). Unify dialects and standard trade abbreviations (e.g., "Tyre" → "Tire", "Impex" → "Import And Export", "Intl" → "International").This rule should not be limited to certain words only. When a batch or group of company names is provided, inspect all words across the entire group for typos or spelling inconsistencies. If multiple names clearly refer to the same company but contain spelling variations, correct the typos and standardise them to the same correct spelling, provided they do not represent different companies.
 2. DO NOT TRANSLATE: Strictly DO NOT translate foreign business names or words (like Industria, Comercio) into English. Maintain their original language, spelling, and structure natively.
 3. GEOGRAPHY UNIFICATION: Expand geography abbreviations perfectly. If a geographic code like "Vn" sits inside the name (e.g., "Industry Vn Co"), safely expand it to "Vietnam" and format structurally.
 4. STRIP NOISE (BRANCHES/YEARS): Completely remove trailing branches (e.g., "Branch In Binh Duong") AND stray incorporation years (e.g., "1949", "1998") from the company name.
@@ -86,7 +86,7 @@ Rules:
 7. NO UNICODE/DIACRITICS: ALWAYS output using standard English alphabets (A-Z) only. Transliterate any unicode characters or diacritics (e.g., "Ö" -> "O", "ç" -> "c") into their standard ASCII Latin equivalents.
 8. STRICT LEGAL SUFFIX PRESERVATION: Do NOT change correct legal suffixes (Pvt Ltd, Limited, LLC, Inc, Corp, DP, etc.). DO NOT merge names that have fundamentally different legal entities/suffixes (e.g., "Adeline Chemical DP" vs "Adeline Chemical LLC", or "Company Inc" vs "Company LLC"). Keep them as distinct outputs.
 9. INTELLIGENT UNIFICATION & NOISE REMOVAL: The input is provided in groups of similar names. Examine each group carefully. If multiple names in a group represent the same company—even if they differ by NTN numbers, tax IDs, bank account details, addresses, or geographic locations—you MUST unify them to the exact same Refined name.
-    *   DROP ONLY banking/payment noise: If a company name is appended with ONLY a bank name (e.g., "... & Faysal Bank", "... & HBL"), drop that bank appendage as NOISE.
+    *   Do not DROp banking name: If a company name is appended with a bank name (e.g., "... & Faysal Bank", "... & HBL"), dont drop that bank appendage as NOISE.
     *   KEEP ALL LOGISTICS / SUPPLY CHAIN DATA: NEVER drop trailing text if it refers to logistics, shipping, or supply chain operators (like "UPS Supply Chain Solutions", "Logistik", etc.). Keep the entire name exactly as is.
     *   KEEP "Trading As" aliases intact: If a name contains "Trading As", "T/A", or "DBA" followed by a trade name (e.g., "Ab Agri Limited Trading As Trident Feeds"), KEEP the full name exactly. Do NOT strip the alias.
     *   KEEP co-entities and joint ventures: If a name connects two distinct legal entities via "And" (e.g., "Apical M Sdn Bhd And Syarikat Logistik Petikemas Sdn Bhd"), KEEP the full name. Do NOT drop the second entity even if it is a logistics, shipping, or subsidiary company.
