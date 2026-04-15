@@ -50,7 +50,7 @@ def process_single_name(raw_name: str) -> dict:
     raw_name = apply_manual_corrections(str(raw_name))   # Step 0: manual corrections
     cleaned_display, cleaned_upper = clean_text(raw_name)
     no_address,  removed_address   = remove_address_details(cleaned_upper)
-    no_prefix,   removed_prefixes  = remove_prefixes(no_address)
+    no_prefix,   removed_prefixes, only_prefix = remove_prefixes(no_address)
     base_name, legal_suffix, legal_family = extract_and_normalize_suffix(no_prefix)
     return {
         'original':         raw_name,
@@ -58,6 +58,7 @@ def process_single_name(raw_name: str) -> dict:
         'cleaned_upper':    cleaned_upper,
         'removed_address':  removed_address,
         'removed_prefixes': removed_prefixes,
+        'only_prefix':      only_prefix,   # True → name was solely a prefix phrase
         'base_name':        base_name,
         'legal_suffix':     legal_suffix,
         'legal_family':     legal_family,
@@ -190,6 +191,16 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
         
         # The confidence was generated purely off the ORIGINAL input vs original reason
         conf, flag   = calculate_confidence(nd, merge_reason)
+
+        # ── "Not Available" override ──────────────────────────────────────────
+        # If the entire original name was nothing but a prefix phrase
+        # (e.g. "To The Order", "To Order", "Consignee"), there is no real
+        # company name to standardise — mark it explicitly as Not Available.
+        if nd.get('only_prefix', False):
+            final_canon = "Not Available"
+            conf        = "Low"
+            flag        = "YES"
+        # ─────────────────────────────────────────────────────────────────────
 
         std_names.append(final_canon)
         conf_scores.append(conf)

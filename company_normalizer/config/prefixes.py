@@ -7,10 +7,13 @@ Longer/more-specific prefixes come first so "TO THE ORDER OF" is matched before 
 TRADE_PREFIXES = [
     "CONSIGNEE TO",
     "CONSIGNEE",
+    "TO THE"
     "TO THE ORDER OF",
+    "TO THE ORDEROF",
     "TO THE ORDER",
     "TO ORDER OF",
     "TO ORDER",
+    "TO THE ORDER ORDER",
     "NOTIFIED PARTY",
     "NOTIFY",
     "NOTIFY PARTY",
@@ -24,6 +27,7 @@ TRADE_PREFIXES = [
     "A/C",
     "F/A",
     "FOR THE ACCOUNT OF",
+    "TO THE OERDER"
 ]
 
 # Business Prefixes

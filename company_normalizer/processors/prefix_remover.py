@@ -1,15 +1,26 @@
 """Prefix removal — strips trade/business/legal prefixes from the START of a name."""
 
-from company_normalizer.config.prefixes import get_all_prefixes
+from company_normalizer.config.prefixes import get_all_prefixes, TRADE_PREFIXES, BUSINESS_PREFIXES, LEGAL_PREFIXES
+
+# All known prefix strings in uppercase, used to detect "only-prefix" names
+_ALL_KNOWN_PREFIXES_UPPER = [p.upper() for p in TRADE_PREFIXES + BUSINESS_PREFIXES + LEGAL_PREFIXES]
 
 
 def remove_prefixes(name: str):
     """
     Iteratively remove all known prefixes from the start of *name*.
-    Returns (clean_name, [removed_prefix, …]).
+
+    Returns
+    -------
+    (clean_name, [removed_prefix, …], only_prefix)
+      clean_name   — name with prefixes stripped
+      removed_prefix — list of prefixes that were removed
+      only_prefix  — True when the ENTIRE original name consists solely of
+                     one or more known prefixes (nothing meaningful remains);
+                     caller should output "Not Available" in this case.
     """
     if not name or not isinstance(name, str):
-        return "", []
+        return "", [], False
 
     current = name.strip()
     removed = []
@@ -23,8 +34,11 @@ def remove_prefixes(name: str):
                 continue
             plen = len(pre_up)
             if plen == len(cur_up):
-                continue         # prefix IS the whole name
-            
+                # The prefix IS the entire remaining string — nothing else left.
+                # Record it and signal that the name is only a prefix.
+                removed.append(prefix)
+                return "", removed, True
+
             # Strip if it's a completely matched trade prefix, OR if followed by a space
             from company_normalizer.config.prefixes import TRADE_PREFIXES
             if prefix in TRADE_PREFIXES or cur_up[plen] == ' ':
@@ -35,4 +49,7 @@ def remove_prefixes(name: str):
         if not changed:
             break
 
-    return current, removed
+    # Also handle case where the name (after earlier prefixes stripped) is now
+    # an empty string — means everything was a prefix chain
+    only_prefix = (current.strip() == "") and len(removed) > 0
+    return current, removed, only_prefix
