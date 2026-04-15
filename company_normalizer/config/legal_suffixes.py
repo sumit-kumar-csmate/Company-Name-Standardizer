@@ -69,8 +69,8 @@ LEGAL_SUFFIX_MAP = {
     "PVT":             ("PRIVATE",         PRIVATE_LIMITED_FAMILY),
     "PTY":             ("PRIVATE",         PRIVATE_LIMITED_FAMILY),
     "PTE":             ("PRIVATE",         PRIVATE_LIMITED_FAMILY),
-    "PT":              ("PT",              PRIVATE_LIMITED_FAMILY),
-    "PT.":             ("PT",              PRIVATE_LIMITED_FAMILY),
+    "CO PT":           ("CO",              None),
+    "PT":              ("",                None),
     "LIMITED":         ("LIMITED",         "LIMITED_FAMILY"),
     "LTD":             ("LIMITED",         "LIMITED_FAMILY"),
     "LTD.":            ("LIMITED",         "LIMITED_FAMILY"),
@@ -222,8 +222,8 @@ LEGAL_SUFFIX_MAP = {
     "TERBUKA": ("TBK", TBK_FAMILY),
 
     # ── MALAYSIAN ───────────────────────────
-    "BHD":              ("BHD", MALAYSIAN_FAMILY),
-    "BERHAD":           ("BHD", MALAYSIAN_FAMILY),
+    "BHD":              ("SDN BHD", MALAYSIAN_FAMILY),
+    "BERHAD":           ("SDN BHD", MALAYSIAN_FAMILY),
     "SDN BHD":          ("SDN BHD", MALAYSIAN_FAMILY),
     "SDN. BHD.":        ("SDN BHD", MALAYSIAN_FAMILY),
     "SENDIRIAN BERHAD": ("SDN BHD", MALAYSIAN_FAMILY),
