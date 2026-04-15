@@ -69,8 +69,8 @@ LEGAL_SUFFIX_MAP = {
     "PVT":             ("PRIVATE",         PRIVATE_LIMITED_FAMILY),
     "PTY":             ("PRIVATE",         PRIVATE_LIMITED_FAMILY),
     "PTE":             ("PRIVATE",         PRIVATE_LIMITED_FAMILY),
-    "PT":              ("PT",              PRIVATE_LIMITED_FAMILY),
-    "PT.":             ("PT",              PRIVATE_LIMITED_FAMILY),
+    "CO PT":           ("CO",              None),
+    "PT":              ("",                None),
     "LIMITED":         ("LIMITED",         "LIMITED_FAMILY"),
     "LTD":             ("LIMITED",         "LIMITED_FAMILY"),
     "LTD.":            ("LIMITED",         "LIMITED_FAMILY"),
@@ -166,13 +166,13 @@ LEGAL_SUFFIX_MAP = {
     "LIMITED LIABILITY CO":      ("LLC", LLC_FAMILY),
 
     # ── GERMAN ──────────────────────────────
-    "GMBH":                                    ("GMBH", GMBH_FAMILY),
-    "GESELLSCHAFT MIT BESCHRÄNKTER HAFTUNG":   ("GMBH", GMBH_FAMILY),
-    "GESELLSCHAFT MIT BESCHRANKTER HAFTUNG":   ("GMBH", GMBH_FAMILY),
+    "GMBH":                                    ("GMBH CO KG", GMBH_FAMILY),
+    "GESELLSCHAFT MIT BESCHRÄNKTER HAFTUNG":   ("GMBH CO KG", GMBH_FAMILY),
+    "GESELLSCHAFT MIT BESCHRANKTER HAFTUNG":   ("GMBH CO KG", GMBH_FAMILY),
     "GMBH CO KG":                              ("GMBH CO KG", GMBH_FAMILY),
     "GMBH AND CO KG":                          ("GMBH CO KG", GMBH_FAMILY),
-    "KG":                                      ("KG", KG_FAMILY),
-    "KOMMANDITGESELLSCHAFT":                   ("KG", KG_FAMILY),
+    "CO KG":                                   ("GMBH CO KG", GMBH_FAMILY),
+    "KOMMANDITGESELLSCHAFT":                   ("GMBH CO KG", GMBH_FAMILY),
     
     # ── AG ──────────────────────────────────
     "AG":                          ("AG", AG_FAMILY),
@@ -222,8 +222,8 @@ LEGAL_SUFFIX_MAP = {
     "TERBUKA": ("TBK", TBK_FAMILY),
 
     # ── MALAYSIAN ───────────────────────────
-    "BHD":              ("BHD", MALAYSIAN_FAMILY),
-    "BERHAD":           ("BHD", MALAYSIAN_FAMILY),
+    "BHD":              ("SDN BHD", MALAYSIAN_FAMILY),
+    "BERHAD":           ("SDN BHD", MALAYSIAN_FAMILY),
     "SDN BHD":          ("SDN BHD", MALAYSIAN_FAMILY),
     "SDN. BHD.":        ("SDN BHD", MALAYSIAN_FAMILY),
     "SENDIRIAN BERHAD": ("SDN BHD", MALAYSIAN_FAMILY),
