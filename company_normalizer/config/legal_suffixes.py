@@ -166,13 +166,13 @@ LEGAL_SUFFIX_MAP = {
     "LIMITED LIABILITY CO":      ("LLC", LLC_FAMILY),
 
     # ── GERMAN ──────────────────────────────
-    "GMBH":                                    ("GMBH", GMBH_FAMILY),
-    "GESELLSCHAFT MIT BESCHRÄNKTER HAFTUNG":   ("GMBH", GMBH_FAMILY),
-    "GESELLSCHAFT MIT BESCHRANKTER HAFTUNG":   ("GMBH", GMBH_FAMILY),
+    "GMBH":                                    ("GMBH CO KG", GMBH_FAMILY),
+    "GESELLSCHAFT MIT BESCHRÄNKTER HAFTUNG":   ("GMBH CO KG", GMBH_FAMILY),
+    "GESELLSCHAFT MIT BESCHRANKTER HAFTUNG":   ("GMBH CO KG", GMBH_FAMILY),
     "GMBH CO KG":                              ("GMBH CO KG", GMBH_FAMILY),
     "GMBH AND CO KG":                          ("GMBH CO KG", GMBH_FAMILY),
-    "KG":                                      ("KG", KG_FAMILY),
-    "KOMMANDITGESELLSCHAFT":                   ("KG", KG_FAMILY),
+    "CO KG":                                   ("GMBH CO KG", GMBH_FAMILY),
+    "KOMMANDITGESELLSCHAFT":                   ("GMBH CO KG", GMBH_FAMILY),
     
     # ── AG ──────────────────────────────────
     "AG":                          ("AG", AG_FAMILY),
