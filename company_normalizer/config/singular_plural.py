@@ -112,7 +112,9 @@ ALLOWED_SINGULAR_MAP = {
     "FERTILIZERS":      "FERTILIZER",
     "FIBERS":           "FIBER",
     "FIBRES":           "FIBRE",
-    "FLAVORS":          "FLAVOR",
+    "FLAVORS":          "FLAVOUR",
+    "FLAVOURS":         "FLAVOUR",
+    "FLAVOR":           "FLAVOUR",
     "FLUIDS":           "FLUID",
     "FOODSTUFFS":       "FOODSTUFF",
     "FORMULATIONS":     "FORMULATION",
@@ -257,9 +259,11 @@ ALLOWED_SINGULAR_MAP = {
     "HEADQUARTERS":      "HEADQUARTER",
     "LOGISTICS":         "LOGISTIC",
     # Countries
-    "Netherlands":       "Netherland",
-    "Nederlands":        "Netherland",
-    "Nederland":         "Netherland"
+    "NETHERLANDS":       "NETHERLAND",
+    "NEDERLANDS":        "NETHERLAND",
+    "NEDERLAND":         "NETHERLAND",
+    "VIETNAM":           "VN",
+    "BANGLADESH":        "BD"
 }
 
 

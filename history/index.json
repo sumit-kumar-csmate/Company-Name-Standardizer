@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "filename": "2026-08-31_18-22-19_Test.xlsx",
+    "original_name": "Test.xlsx",
+    "row_count": 89,
+    "timestamp": "2026-08-31T18:22:19"
+  },
+  {
+    "filename": "2026-08-31_18-11-48_Test.xlsx",
+    "original_name": "Test.xlsx",
+    "row_count": 89,
+    "timestamp": "2026-08-31T18:11:48"
+  },
+  {
+    "filename": "2026-08-31_18-09-46_Test.xlsx",
+    "original_name": "Test.xlsx",
+    "row_count": 89,
+    "timestamp": "2026-08-31T18:09:46"
+  },
+  {
+    "filename": "2026-08-31_17-56-50_Test.xlsx",
+    "original_name": "Test.xlsx",
+    "row_count": 89,
+    "timestamp": "2026-08-31T17:56:50"
+  },
+  {
+    "filename": "2026-08-31_17-35-02_Test.xlsx",
+    "original_name": "Test.xlsx",
+    "row_count": 89,
+    "timestamp": "2026-08-31T17:35:02"
+  }
+]

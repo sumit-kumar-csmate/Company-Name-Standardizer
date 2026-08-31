@@ -45,9 +45,9 @@ SAL_FAMILY             = "SAL_FAMILY"
 LEGAL_SUFFIX_MAP = {
     # ── PRIVATE / LIMITED ───────────────────
     "PRIVATE LIMITED": ("PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
-    "CO PRIVATE LIMITED":      ("PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
-    "COMPANY PRIVATE LIMITED": ("PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
-    "CO. PRIVATE LIMITED":     ("PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
+    "CO PRIVATE LIMITED":      ("CO PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
+    "COMPANY PRIVATE LIMITED": ("CO PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
+    "CO. PRIVATE LIMITED":     ("CO PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
     "PVT LTD":         ("PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
     "PVT. LTD.":       ("PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
     "PVT LTD.":        ("PRIVATE LIMITED", PRIVATE_LIMITED_FAMILY),
@@ -170,7 +170,9 @@ LEGAL_SUFFIX_MAP = {
     "GESELLSCHAFT MIT BESCHRANKTER HAFTUNG":   ("GMBH CO KG", GMBH_FAMILY),
     "GMBH CO KG":                              ("GMBH CO KG", GMBH_FAMILY),
     "GMBH AND CO KG":                          ("GMBH CO KG", GMBH_FAMILY),
+    "GMBH AND KG":                             ("GMBH CO KG", GMBH_FAMILY),
     "CO KG":                                   ("GMBH CO KG", GMBH_FAMILY),
+    "KG":                                      ("GMBH CO KG", GMBH_FAMILY),
     "KOMMANDITGESELLSCHAFT":                   ("GMBH CO KG", GMBH_FAMILY),
     
     # ── AG ──────────────────────────────────
@@ -202,6 +204,8 @@ LEGAL_SUFFIX_MAP = {
     "B.V.":                  ("BV", "BV_FAMILY"),
     "B V":                   ("BV", "BV_FAMILY"),
     "BESLOTEN VENNOOTSCHAP": ("BV", "BV_FAMILY"),
+    "BVBA":                  ("BV", "BV_FAMILY"),
+    "B.V.B.A.":              ("BV", "BV_FAMILY"),
 
     # ── JAPANESE ────────────────────────────
     "KK":               ("KK", KK_FAMILY),

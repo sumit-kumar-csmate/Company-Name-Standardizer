@@ -65,6 +65,19 @@ ABBREVIATION_MAP = [
     (r'\bINTL\.?\b',           'International'),
     (r'\bBros\.?\b',           'Brothers'),
     (r'\bBROS\.?\b',           'Brothers'),
+    
+    # ── Full Form Legal Suffix Conversions (Anywhere in string) ──
+    (r'\bBesloten Vennootschap\b', 'BV'),
+    (r'\bNaamloze Vennootschap\b', 'NV'),
+    (r'\bSendirian Berhad\b',      'Sdn Bhd'),
+    (r'\bFree Zone Establishment\b','FZE'),
+    (r'\bDubai Multi Commodities Centre\b', 'DMCC'),
+    (r'\bLimited Liability Company\b', 'LLC'),
+    (r'\bLimited Liability Partnership\b', 'LLP'),
+    (r'\bJoint Stock Company\b',   'JSC'),
+    (r'\bSociete Anonyme\b',       'SA'),
+    (r'\bAktiengesellschaft\b',    'AG'),
+    (r'\bKabushiki Kaisha\b',      'KK'),
 ]
 
 # Characters replaced with 4 spaces in Step 1

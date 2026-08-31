@@ -39,7 +39,7 @@ def _core_key(name: str) -> str:
       5. Strip PRIVATE / LIMITED / AND as substrings (handles both whole-word
          and embedded cases, e.g. 'Salesprivate' → core same as 'Sales Private')
     """
-    s = normalize_words_in_name(name).upper()
+    s = normalize_words_in_name(name, apply_synonyms=True).upper()
     words = [w for w in s.split() if w not in _REMOVABLE_WHOLE_WORDS]
     s = "".join(words)
     
@@ -72,8 +72,8 @@ def _anagrams_ignoring_andpvtltd(name1: str, name2: str) -> bool:
     if not name1 or not name2:
         return False
     skip = set(_REMOVABLE_SUBSTRINGS + _REMOVABLE_WHOLE_WORDS)
-    w1 = {w for w in normalize_words_in_name(name1).upper().split() if w not in skip}
-    w2 = {w for w in normalize_words_in_name(name2).upper().split() if w not in skip}
+    w1 = {w for w in normalize_words_in_name(name1, apply_synonyms=True).upper().split() if w not in skip}
+    w2 = {w for w in normalize_words_in_name(name2, apply_synonyms=True).upper().split() if w not in skip}
     return bool(w1) and w1 == w2
 
 
@@ -204,7 +204,7 @@ def _get_blocking_keys(d: dict) -> list:
         keys.append(('base', base_up))
 
         # Key 2: frozenset of singular/plural-normalized words (order-independent)
-        norm_base = normalize_words_in_name(base).upper().split()
+        norm_base = normalize_words_in_name(base, apply_synonyms=True).upper().split()
         if norm_base:
             keys.append(('norm_fs', frozenset(norm_base)))
 
@@ -225,7 +225,7 @@ def _get_blocking_keys(d: dict) -> list:
             keys.append(('core_c', ck_c))
 
         # Key 6: frozenset of normalized cleaned words excluding SKIP
-        norm_cleaned = normalize_words_in_name(cleaned).upper().split()
+        norm_cleaned = normalize_words_in_name(cleaned, apply_synonyms=True).upper().split()
         norm_cleaned_set = frozenset(w for w in norm_cleaned if w not in SKIP)
         if norm_cleaned_set:
             keys.append(('anagram_c', norm_cleaned_set))
