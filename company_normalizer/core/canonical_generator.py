@@ -35,7 +35,7 @@ def generate_canonical(name_data: dict) -> str:
 
 def _quality_score(name_data: dict) -> tuple:
     """
-    Score a name_data entry on 8 quality dimensions.
+    Score a name_data entry on 7 quality dimensions.
     Higher score = better canonical candidate.
 
     Returns a tuple so that ties are broken deterministically.
@@ -46,18 +46,16 @@ def _quality_score(name_data: dict) -> tuple:
                                  A name with a suffix is more complete.
       2. suffix_is_full        — Suffix is the full form "PRIVATE LIMITED" vs "LIMITED"
                                  (more complete suffix = better)
-      3. has_no_brackets       — No parentheses in the cleaned name (bracket content
-                                 is usually an abbreviation like "(I)" or "(P)")
-      4. no_single_letter_word — No isolated single-letter word in the base name
+      3. no_single_letter_word — No isolated single-letter word in the base name
                                  (e.g. "A" from "(A)" — usually less complete)
-      5. word_count            — More words in the base name = more complete
+      4. word_count            — More words in the base name = more complete
                                  (e.g. "Acme Chemicals India" > "Acme Chemicals")
-      6. no_trailing_artifact  — Does not end with a stray number or abbreviation
+      5. no_trailing_artifact  — Does not end with a stray number or abbreviation
                                  that looks like an address artifact
-      7. spelt_out_suffix      — Suffix is already in long form (not an abbreviation)
+      6. spelt_out_suffix      — Suffix is already in long form (not an abbreviation)
                                  This overlaps with suffix_is_full but catches
                                  "Corp" vs "Corporation" etc.
-      8. base_char_length      — Longer character count in base name = more complete
+      7. base_char_length      — Longer character count in base name = more complete
                                  (tiebreaker so "India" beats "I")
     """
     base    = name_data.get('base_name', '').upper()
@@ -67,46 +65,51 @@ def _quality_score(name_data: dict) -> tuple:
     # 1. Has a legal suffix at all
     has_suffix = 1 if suffix.strip() else 0
 
-    # 2. Suffix completeness: "PRIVATE LIMITED" > "LIMITED" > "LTD" etc.
+    # 2. Suffix completeness: Assign higher points to full or robust international structures
+    suffix_up = suffix.upper()
     suffix_score = 0
-    if 'PRIVATE LIMITED' in suffix.upper():
+    
+    # 3-Point Tier: Fully expanded Commonwealth or major international formal structures
+    tier_3 = [
+        'PRIVATE LIMITED', 'CO LIMITED', 
+        'SDN BHD', 'SA DE CV', 'S DE RL DE CV', 
+        'GMBH', 'SRL', 'SARL', 'LLP', 'PLC', 'PTY LTD'
+    ]
+    # 2-Point Tier: Generic Limited or standard mid-tier structures
+    tier_2 = ['LIMITED', 'INC', 'CORPORATION']
+    
+    if any(t in suffix_up for t in tier_3):
         suffix_score = 3
-    elif 'CO LIMITED' in suffix.upper():
-        suffix_score = 3
-    elif 'LIMITED' in suffix.upper():
+    elif any(t in suffix_up for t in tier_2):
         suffix_score = 2
     elif suffix.strip():
         suffix_score = 1
 
-    # 3. No parentheses in the full cleaned name
-    has_no_brackets = 0 if ('(' in cleaned or ')' in cleaned) else 1
-
-    # 4. No isolated single-letter words in base (e.g. "A", "I", "P")
+    # 3. No isolated single-letter words in base (e.g. "A", "I", "P")
     base_words = base.split()
     no_single_letter = 1 if not any(len(w) == 1 for w in base_words) else 0
 
-    # 5. Word count in base name (more = more complete)
+    # 4. Word count in base name (more = more complete)
     word_count = len(base_words)
 
-    # 6. No trailing artifact — last word is not a single digit or short abbrev
+    # 5. No trailing artifact — last word is not a single digit or short abbrev
     no_artifact = 1
     if base_words:
         last = base_words[-1]
         if last.isdigit() or (len(last) <= 2 and not last.isalpha()):
             no_artifact = 0
 
-    # 7. Suffix already in long-form (not abbreviated)
+    # 6. Suffix already in long-form (not abbreviated)
     #    Penalise if suffix contains a typical abbreviation
     abbrev_suffixes = {'PVT', 'LTD', 'INC', 'CORP', 'CO', 'MFG'}
     spelt_out = 1 if not any(a in suffix.upper().split() for a in abbrev_suffixes) else 0
 
-    # 8. Character length of the base name (tiebreaker)
+    # 7. Character length of the base name (tiebreaker)
     base_len = len(base.replace(' ', ''))
 
     return (
         has_suffix,         # primary: prefer names with a legal suffix
         suffix_score,       # secondary: prefer more complete suffixes
-        has_no_brackets,    # tertiary: prefer no brackets
         no_single_letter,   # then: prefer no single-letter words
         word_count,         # then: prefer more words
         no_artifact,        # then: prefer no trailing artifact

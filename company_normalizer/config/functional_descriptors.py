@@ -14,33 +14,68 @@ from company_normalizer.config.singular_plural import normalize_word
 # so plural variants (CHEMICALS, INDUSTRIES, TECHNOLOGIES …)
 # automatically map to the canonical singular here.
 FUNCTIONAL_DESCRIPTORS = frozenset([
+    # ── Logistics & Trade ────────────────────────────────────────────────────
     "LOGISTIC",      # logistics / logistic
     "TRADING",       # no plural variant
-    "FINANCE",       # finance / financial handled separately
+    "EXPORT",        # exports / export
+    "IMPORT",        # imports / import
+    "SHIPPING",
+    "TRANSPORT",
+
+    # ── Finance & Investment ─────────────────────────────────────────────────
+    "FINANCE",
     "FINANCIAL",
     "HOLDING",       # holdings / holding
+    "CAPITAL",
+    "INVESTMENT",
+    "INSURANCE",
+    "BANK",
+
+    # ── Energy & Infrastructure ──────────────────────────────────────────────
     "POWER",
     "ENERGY",
     "INFRA",
     "INFRASTRUCTURE",
+    "PETROLEUM",
+    "OIL",
+    "GAS",
+    "ELECTRIC",
+
+    # ── Technology & Services ────────────────────────────────────────────────
     "SERVICE",       # services / service
     "PROJECT",       # projects / project
     "TECHNOLOGY",    # technologies / technology
     "SYSTEM",        # systems / system
     "SOLUTION",      # solutions / solution
     "ENTERPRISE",    # enterprises / enterprise
+    "MEDIA",
+
+    # ── Manufacturing & Industry ─────────────────────────────────────────────
     "MANUFACTURING",
     "INDUSTRY",      # industries / industry
-    "EXPORT",        # exports / export
-    "IMPORT",        # imports / import
+    "ENGINEERING",
+    "CONSTRUCTION",
+    "MINING",
+    "STEEL",
+    "CEMENT",
+    "PAPER",
+    "RUBBER",
+    "PAINT",
+
+    # ── Chemicals & Life Sciences ────────────────────────────────────────────
     "CHEMICAL",      # chemicals / chemical
     "PHARMA",
     "PHARMACEUTICAL", # pharmaceuticals / pharmaceutical
+
+    # ── Consumer & Retail ────────────────────────────────────────────────────
     "FOOD",          # foods / food
     "AGRO",
     "TEXTILE",       # textiles / textile
     "RETAIL",
-    "CAPITAL",
+
+    # ── Real Estate ──────────────────────────────────────────────────────────
+    "PROPERTY",
+    "ESTATE",
 ])
 
 

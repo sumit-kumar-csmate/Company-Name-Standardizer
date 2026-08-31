@@ -7,13 +7,19 @@ import re
 from company_normalizer.config.geography import is_geographic_term
 
 ADDRESS_KEYWORDS = {
+    # ── Standard international ────────────────────────────────────────────────
     "BUILDING", "BLDG", "BLD", "FLOOR", "FLR",
-    "BLOCK","STREET", "ROAD", "AVENUE", "LANE", "TOWER", "PLAZA",
+    "BLOCK", "STREET", "ROAD", "AVENUE", "LANE", "TOWER", "PLAZA",
     "COMPLEX", "HOUSE", "SUITE",
     "UNIT", "ROOM", "NUMBER", "NEAR",
     "OPPOSITE", "SECTOR", "PHASE", "PLOT",
     "FLAT", "NAGAR", "COLONY", "AREA", "ZONE",
     "DISTRICT", "TEHSIL", "TALUKA", "VILLAGE",
+    # ── Additional international / South-Asian ────────────────────────────────
+    "OFFICE", "PREMISES", "WAREHOUSE", "GODOWN",
+    "PARK", "GATE", "MARKET", "BAZAR", "BAZAAR",
+    "HIGHWAY", "BOULEVARD",
+    "CHOWK", "MARG",
 }
 
 

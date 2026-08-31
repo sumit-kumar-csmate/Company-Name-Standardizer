@@ -35,7 +35,6 @@ LLP_FAMILY             = "LLP_FAMILY"
 DMCC_FAMILY            = "DMCC_FAMILY"
 KG_FAMILY              = "KG_FAMILY"
 SAS_FAMILY             = "SAS_FAMILY"
-SMC_FAMILY             = "SMC_FAMILY"
 AG_FAMILY              = "AG_FAMILY"
 AB_FAMILY              = "AB_FAMILY"
 OY_FAMILY              = "OY_FAMILY"
@@ -270,9 +269,6 @@ LEGAL_SUFFIX_MAP = {
     # ── OTHERS ──────────────────────────────
     "LLP":                           ("LLP", LLP_FAMILY),
     "LIMITED LIABILITY PARTNERSHIP": ("LLP", LLP_FAMILY),
-    "SMC":                           ("SMC", SMC_FAMILY),
-    "SINGLE MEMBER COMPANY":         ("SMC", SMC_FAMILY),
-    "SINGLE MEMBER CO":              ("SMC", SMC_FAMILY),
 
     # ── VIETNAMESE ──────────────────────────
     "DP":                            ("DP", DP_FAMILY),    # Doanh Nghiep (Enterprise)

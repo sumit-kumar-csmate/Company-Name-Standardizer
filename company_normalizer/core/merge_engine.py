@@ -174,15 +174,79 @@ def can_merge(d1: dict, d2: dict, base_to_families: dict = None):
     return True, "All rules align"
 
 
+
+def _get_blocking_keys(d: dict) -> list:
+    """
+    Generate all blocking keys for one name_data record.
+
+    Keys are 2-tuples (namespace, hashable_value) so different key types
+    cannot accidentally collide with each other.
+
+    Key #1  exact base_name              — covers identical base names
+    Key #2  frozenset(normalized words)  — covers word-order + singular/plural variants
+    Key #3  _core_key(base_name)         — covers AND/PVT/LTD + space-only diffs
+    Key #4  frozenset(normalized - SKIP) — covers anagram + AND/PVT/LTD + plural
+    Key #5  _core_key(cleaned_upper)     — cleaned_upper fallback for #3
+    Key #6  frozenset(cleaned - SKIP)    — cleaned_upper fallback for #4
+    """
+    from company_normalizer.processors.singular_plural_handler import normalize_words_in_name
+
+    SKIP = set(_REMOVABLE_SUBSTRINGS + _REMOVABLE_WHOLE_WORDS)
+    keys = []
+
+    base    = (d.get('base_name')    or '').strip()
+    cleaned = (d.get('cleaned_upper') or '').strip()
+
+    if base:
+        base_up = base.upper()
+
+        # Key 1: exact upper base name
+        keys.append(('base', base_up))
+
+        # Key 2: frozenset of singular/plural-normalized words (order-independent)
+        norm_base = normalize_words_in_name(base).upper().split()
+        if norm_base:
+            keys.append(('norm_fs', frozenset(norm_base)))
+
+        # Key 3: core key strips AND/PVT/LTD + spaces
+        ck = _core_key(base)
+        if ck:
+            keys.append(('core', ck))
+
+        # Key 4: frozenset of normalized words excluding AND/PVT/LTD/CO
+        norm_base_set = frozenset(w for w in norm_base if w not in SKIP)
+        if norm_base_set:
+            keys.append(('anagram', norm_base_set))
+
+    if cleaned:
+        # Key 5: core key of the full cleaned name (handles edge-case suffix overlap)
+        ck_c = _core_key(cleaned)
+        if ck_c:
+            keys.append(('core_c', ck_c))
+
+        # Key 6: frozenset of normalized cleaned words excluding SKIP
+        norm_cleaned = normalize_words_in_name(cleaned).upper().split()
+        norm_cleaned_set = frozenset(w for w in norm_cleaned if w not in SKIP)
+        if norm_cleaned_set:
+            keys.append(('anagram_c', norm_cleaned_set))
+
+    return keys
+
+
 def build_merge_groups(name_data_list: list) -> list:
     """
-    Group mergeable names using Union-Find.
-    Returns list of groups (each a list of indices).
-    Each group dict includes the list of original indices and the merge_reason
-    that applies across the group.
+    Group mergeable names using Union-Find with Exact-Match Blocking.
+
+    Instead of O(N²) brute-force comparisons, each record generates up to 6
+    blocking keys. The Union-Find engine only compares pairs that share at least
+    one key — guaranteed to include every pair that *could* pass can_merge(),
+    because Rule 3 requires a key match for any merge to succeed.
+
+    Returns list of group dicts (each has 'indices' and 'merge_reason') and
+    the base_to_families pre-scan dict.
     """
     n = len(name_data_list)
-    
+
     # 1. Pre-scan for global suffix conflicts
     base_to_families = {}
     for d in name_data_list:
@@ -192,10 +256,26 @@ def build_merge_groups(name_data_list: list) -> list:
         fam = d.get('legal_family')
         if fam:
             base_to_families.setdefault(_stripped(base), set()).add(fam)
-            
-    # 2. Union-Find merge
+
+    # 2. Build blocking index: key -> list of row indices
+    blocks: dict = {}
+    for i, d in enumerate(name_data_list):
+        for key in _get_blocking_keys(d):
+            blocks.setdefault(key, []).append(i)
+
+    # 3. Collect unique candidate pairs from all blocks
+    candidate_pairs: set = set()
+    for indices in blocks.values():
+        for a in range(len(indices)):
+            for b in range(a + 1, len(indices)):
+                i, j = indices[a], indices[b]
+                if i > j:
+                    i, j = j, i
+                candidate_pairs.add((i, j))
+
+    # 4. Union-Find on candidate pairs only
     parent = list(range(n))
-    reason_map: dict = {}   # edge (i, j) → reason
+    reason_map: dict = {}
 
     def find(i):
         while parent[i] != i:
@@ -208,8 +288,6 @@ def build_merge_groups(name_data_list: list) -> list:
         if ri != rj:
             parent[rj] = ri
             existing = reason_map.get(ri, "All rules align")
-            # Priority order (weakest wins so manual review is preserved):
-            #   AND_PVT_LTD_ONLY > SPACE_ONLY > All rules align
             if reason == "AND_PVT_LTD_ONLY" or existing == "AND_PVT_LTD_ONLY":
                 reason_map[ri] = "AND_PVT_LTD_ONLY"
             elif reason == "SPACE_ONLY" or existing == "SPACE_ONLY":
@@ -217,18 +295,17 @@ def build_merge_groups(name_data_list: list) -> list:
             else:
                 reason_map[ri] = existing
 
-    for i in range(n):
-        for j in range(i + 1, n):
-            ok, reason = can_merge(name_data_list[i], name_data_list[j], base_to_families)
-            if ok:
-                union(i, j, reason)
+    for i, j in candidate_pairs:
+        ok, reason = can_merge(name_data_list[i], name_data_list[j], base_to_families)
+        if ok:
+            union(i, j, reason)
 
+    # 5. Build output groups
     groups: dict = {}
     for i in range(n):
         root = find(i)
         groups.setdefault(root, []).append(i)
 
-    # Attach merge_reason to each group as a list of (indices, reason)
     result = []
     for root, indices in groups.items():
         result.append({
@@ -236,3 +313,4 @@ def build_merge_groups(name_data_list: list) -> list:
             'merge_reason': reason_map.get(root, "All rules align"),
         })
     return result, base_to_families
+

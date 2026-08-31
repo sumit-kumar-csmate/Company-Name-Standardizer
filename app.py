@@ -88,7 +88,6 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
         for i in indices:
             idx_to_canon[i]  = canon
             idx_to_reason[i] = merge_reason
-            conf, _ = calculate_confidence(name_data[i], merge_reason)
     # --- STAGE 4: AI REFINEMENT (Intelligent Grouping) ---
     # Prepare confidence scores for all rows
     confidence_scores = []
@@ -208,36 +207,54 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
         ai_names.append(final_canon if final_canon != raw_canon else "")
         sources.append("AI + RULE" if final_canon != raw_canon else get_decision_source())
 
-    # --- NEW SUBSET DETECTION LOGIC ---
-    unique_std = list(set(std_names))
+    # --- SUBSET DETECTION (Fix B+G: Inverted word index + first-word filter) ---
+    # Build an inverted index: word -> set of indices in unique_std
+    unique_std = [n for n in set(std_names) if isinstance(n, str) and n]
     subset_involved = set()
-    
-    # Pad with spaces for exact word boundary match
-    padded = {n: f" {str(n).lower()} " for n in unique_std if isinstance(n, str)}
-    for i in range(len(unique_std)):
-        for j in range(i+1, len(unique_std)):
-            n1 = unique_std[i]
-            n2 = unique_std[j]
-            if not isinstance(n1, str) or not isinstance(n2, str):
+
+    padded = {n: f" {n.lower()} " for n in unique_std}
+    word_to_idxs: dict = {}
+    for idx, name in enumerate(unique_std):
+        for word in name.lower().split():
+            word_to_idxs.setdefault(word, set()).add(idx)
+
+    # Sort shorter names first — a shorter name can only be a subset of a longer name
+    sorted_idxs = sorted(range(len(unique_std)), key=lambda i: len(unique_std[i]))
+
+    for pos in sorted_idxs:
+        n_short = unique_std[pos]
+        words_short = n_short.lower().split()
+        if not words_short:
+            continue
+
+        # Fix G: Only compare names sharing the same FIRST WORD (brand token)
+        # This prevents common words (e.g. "Global", "National") from triggering
+        # cross-company false-positive subset alerts.
+        first_word = words_short[0]
+        candidates = word_to_idxs.get(first_word, set()).copy()
+
+        # Further narrow: candidates must share ALL words of the shorter name
+        for word in words_short[1:]:
+            candidates &= word_to_idxs.get(word, set())
+            if not candidates:
+                break
+
+        p_short = padded[n_short]
+        for j in candidates:
+            if j == pos:
                 continue
-            
-            p1 = padded[n1]
-            p2 = padded[n2]
-            
-            w1 = len(n1.split())
-            w2 = len(n2.split())
-            if w1 == 0 or w2 == 0:
+            n_long = unique_std[j]
+            if len(n_long) <= len(n_short):
+                continue
+                
+            # STRICT FIRST-WORD CHECK: Both names must start with the same word
+            words_long = n_long.lower().split()
+            if not words_long or words_long[0] != first_word:
                 continue
 
-            # Check for contiguous word subsets
-            if len(p1) > len(p2):
-                if p2 in p1:
-                    subset_involved.add(n1)
-                    subset_involved.add(n2)
-            elif len(p2) > len(p1):
-                if p1 in p2:
-                    subset_involved.add(n1)
-                    subset_involved.add(n2)
+            if p_short in padded[n_long]:
+                subset_involved.add(n_short)
+                subset_involved.add(n_long)
 
     subset_highlights = []
     for i in range(len(std_names)):

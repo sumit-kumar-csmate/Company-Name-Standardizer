@@ -98,7 +98,8 @@ ALLOWED_SINGULAR_MAP = {
     "COATINGS":         "COATING",
     "COLORANTS":        "COLORANT",
     "COLORS":           "COLOR",
-    "COLOURS":          "COLOUR",
+    "COLOURS":          "COLOR",
+    "COLOUR":           "COLOR",
     "COMPONENTS":       "COMPONENT",
     "COSMETICS":        "COSMETIC",
     "DENIMS":           "DENIM",
@@ -143,7 +144,8 @@ ALLOWED_SINGULAR_MAP = {
     "RETARDANTS":       "RETARDANT",
     "ANTIOXIDANTS":     "ANTIOXIDANT",
     "OXIDANTS":         "OXIDANT",
-    "SULFATES":         "SULFATE",
+    "SULFATES":         "SULPHATE",
+    "SULFATE":          "SULPHATE",
     "SULPHATES":        "SULPHATE",
     "NITRATES":         "NITRATE",
     "SILICATES":        "SILICATE",
@@ -301,7 +303,8 @@ SAFE_SUFFIX_PATTERNS = [
     # -IZERS → -IZER  (agent/process chemistry words, US spelling)
     # e.g. fertilIZERS, plasticIZERS, stabilIZERS, oxidIZERS → IZERS suffix
     # Min 9: "SIZERS"(6) excluded. Shortest real match: "OXIDIZERS"(9).
-    (9,  "IZERS",   "IZER"),
+    (9,  "IZERS",   "ISER"),
+    (8,  "IZER",   "ISER"),
 
     # -ISERS → -ISER  (British spelling of -IZERS)
     # e.g. stabilISERS, emulsifISERS, oxidISERS
@@ -335,7 +338,7 @@ SAFE_SUFFIX_PATTERNS = [
     (8,  "PHATES",  "PHATE"),    # sulPHATES, phosPHATES (≥8 chars)
     (9,  "LICATES", "LICATE"),   # siLICATES, carbonate? no — this is siLICATES
     (10, "BONATES", "BONATE"),   # carBONATES
-    (8,  "SULFATES","SULFATE"),  # exact suffix → 'SULFATES' is 8 chars = 8 ✓
+    (8,  "SULFATES","SULPHATE"),  # exact suffix → 'SULFATES' is 8 chars = 8 ✓
     (8,  "SULPHATES","SULPHATE"),
     (8,  "NITRATES","NITRATE"),  # 8 chars = 8 ✓
 
