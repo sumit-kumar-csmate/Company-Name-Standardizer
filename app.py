@@ -17,7 +17,9 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+api_key = os.getenv("LITELLM_API_KEY")
+base_url = os.getenv("LITELLM_BASE_URL")
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -67,8 +69,10 @@ def process_single_name(raw_name: str) -> dict:
     }
 
 
-def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, model_name: str = "gemini-2.5-flash"):
-    # Stage 1 — per-name processing
+def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, base_url: str = None, model_name: str = "flash-qc"):
+    """
+    End-to-end pipeline.
+    """
     name_data = [process_single_name(str(row[company_col])) for _, row in df.iterrows()]
 
     # Stage 2 — merge groups
@@ -88,7 +92,6 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
         for i in indices:
             idx_to_canon[i]  = canon
             idx_to_reason[i] = merge_reason
-    # --- STAGE 4: AI REFINEMENT (Intelligent Grouping) ---
     # Prepare confidence scores for all rows
     confidence_scores = []
     for i in range(len(name_data)):
@@ -145,7 +148,8 @@ def process_dataframe(df: pd.DataFrame, company_col: str, api_key: str = None, m
 
         raw_ai_map, ai_status = refine_company_names(
             list(ai_candidates), 
-            api_key, 
+            api_key,
+            base_url=base_url,
             model_name=model_name,
             progress_callback=progress_callback
         )
@@ -387,14 +391,14 @@ def main():
             enable_ai = st.checkbox("Enable AI Refinement", value=True)
             model_to_use = st.selectbox(
                 "Select Model",
-                ["gemini-2.5-flash", "gemini-3.1-pro-preview"],
+                ["flash-qc", "gemini/gemini-2.5-flash"],
                 index=0,
-                help="Choose the model for name verification. 2.5/2.0 are recommended for speed."
+                help="Choose the model for name verification. 3.7-flash is recommended."
             )
         else:
             enable_ai = st.checkbox("Enable AI Refinement", value=False, disabled=True)
-            model_to_use = "gemini-2.5-flash"
-            st.warning("No API key found. Add OPENAI_API_KEY to your .env file to enable AI.")
+            model_to_use = "flash-qc"
+            st.warning("No API key found. Add LITELLM_API_KEY to your .env file to enable AI.")
 
         st.divider()
         st.markdown("### 📋 Normalisation Rules")
@@ -497,9 +501,12 @@ def main():
     # ── Process ───────────────────────────────────────────────────────────────
     if st.button("🚀 Standardise Names", use_container_width=True):
         key_to_use = api_key if (enable_ai and api_key) else None
+        url_to_use = base_url if (enable_ai and api_key) else None
         with st.spinner("Processing …"):
             try:
-                result_df, total, n_groups, ai_status, near_dup_canons = process_dataframe(df, company_col, api_key=key_to_use, model_name=model_to_use)
+                result_df, total, n_groups, ai_status, near_dup_canons = process_dataframe(
+                    df, company_col, api_key=key_to_use, base_url=url_to_use, model_name=model_to_use
+                )
             except Exception as e:
                 st.error(f"Processing error: {e}"); st.exception(e); return
 

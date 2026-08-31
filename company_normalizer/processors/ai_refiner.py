@@ -125,8 +125,8 @@ def _try_one_batch(client: OpenAI, batch_groups: list, model: str, timeout: int)
     return content, num_to_name
 
 
-def refine_company_names(names: list, api_key: str,
-                         model_name: str = "gemini-2.5-flash",
+def refine_company_names(names: list, api_key: str, base_url: str = None,
+                         model_name: str = "flash-qc",
                          progress_callback=None) -> tuple:
     """
     Refine *names* via OpenAI custom proxy. Returns ({original: refined}, status_msg).
@@ -139,9 +139,13 @@ def refine_company_names(names: list, api_key: str,
         return {n: n for n in names}, "No API Key or no names provided"
 
     try:
+        # Default to the given base_url. If it doesn't have /v1 and the proxy requires it,
+        # it might fail, but we'll try what's provided first.
+        # Fallback to the old default if none provided (or if empty).
+        client_base = base_url if base_url else "https://proxy.abhibots.com/v1"
         client = OpenAI(
             api_key=api_key,
-            base_url="https://proxy.abhibots.com/v1",
+            base_url=client_base,
         )
     except Exception as e:
         err = f"Client config error: {e}"
